@@ -101,6 +101,13 @@ engines:
   - name: hackernews
     disabled: true
 
+  # Отключаем Tor-only движки (требуют Tor proxy)
+  - name: ahmia
+    disabled: true
+
+  - name: torch
+    disabled: true
+
 # Custom dev-движки
   - name: cppreference
     engine: xpath
@@ -169,9 +176,6 @@ plugins:
     active: true
 
   searx.plugins.self_info.SXNGPlugin:
-    active: true
-
-  searx.plugins.ahmia_filter.SXNGPlugin:
     active: true
 
   searx.plugins.oa_doi_rewrite.SXNGPlugin:
