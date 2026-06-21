@@ -1,5 +1,5 @@
 # ============================================
-# SearXNG settings.yml — оптимизирован для скорости и эффективности
+# SearXNG settings.yml — оптимизировано для скорости и эффективности
 # https://docs.searxng.org/admin/settings/settings.html#use-default-settings
 # ============================================
 
@@ -7,15 +7,15 @@ use_default_settings: true
 
 general:
   instance_name: "SearXNG"
-  enable_metrics: false  # отключена телеметрия
+  enable_metrics: false
 
 server:
   port: 8080
   bind_address: "0.0.0.0"
-  secret_key: "changeme"  # ОБЯЗАТЕЛЬНО смените!
+  secret_key: "changeme"
   base_url: "http://localhost:8080/"
-  image_proxy: true  # проксирование картинок (privacy + performance)
-  limiter: false  # отключено для приватного инстанса
+  image_proxy: true
+  limiter: false
   method: "POST"
 
 search:
@@ -25,6 +25,15 @@ search:
   formats:
     - html
     - json
+  
+  # Увеличенные времена приостановки после ошибок (защита от банов)
+  suspended_times:
+    SearxEngineAccessDenied: 3600      # 1 час после 403
+    SearxEngineCaptcha: 7200            # 2 часа после капчи
+    SearxEngineTooManyRequests: 1800    # 30 минут после 429
+    cf_SearxEngineCaptcha: 86400        # 24 часа (Cloudflare капча)
+    cf_SearxEngineAccessDenied: 86400   # 24 часа (Cloudflare бан)
+    recaptcha_SearxEngineCaptcha: 86400 # 24 часа (reCAPTCHA)
 
 ui:
   default_theme: simple
@@ -33,17 +42,29 @@ ui:
     simple_style: auto
   infinite_scroll: true
 
-# Оптимизация таймаутов для скорости
 outgoing:
-  request_timeout: 4.0  # уменьшено с 6.0 для быстроты
-  max_request_timeout: 10.0  # уменьшено с 15.0
+  request_timeout: 4.0
+  max_request_timeout: 10.0
   enable_http2: true
-  pool_connections: 100
-  pool_maxsize: 20
+  
+  # User-Agent rotation (раскомментируй если нужно)
+  # useragent_suffix: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+  
+  # Прокси для анонимности (раскомментируй и настрой)
+  # proxies:
+  #   all://:
+  #     - "http://proxy1:8080"
+  #     - "socks5://proxy2:1080"
 
-# Отключаем медленные/ненужные движки, включаем полезные
 engines:
-  # === ОТКЛЮЧАЕМ BLOAT ===
+  # === Включенные движки (были disabled по умолчанию) ===
+  - name: yandex
+    disabled: false
+
+  - name: yandex images
+    disabled: false
+
+  # === Отключенные (bloat/медленные) ===
   - name: bing
     disabled: true
 
@@ -59,140 +80,113 @@ engines:
   - name: yahoo
     disabled: true
 
-  - name: yahoo news
-    disabled: true
-
   - name: qwant
     disabled: true
 
-  - name: qwant news
-    disabled: true
-
-  - name: qwant images
-    disabled: true
-
-  - name: qwant videos
-    disabled: true
-
-  # Медленные/ненадёжные
   - name: mojeek
     disabled: true
 
-  - name: mojeek images
+  - name: hackernews
     disabled: true
 
-  - name: hackernews
-    disabled: true  # часто таймаутит
-
-  # === ВКЛЮЧАЕМ YANDEX (был отключён по умолчанию) ===
-  - name: yandex
-    disabled: false
-    timeout: 5.0
-
-  - name: yandex images
-    disabled: false
-    timeout: 5.0
-
-  # === ОПТИМИЗИРУЕМ ТАЙМАУТЫ ДЛЯ МЕДЛЕННЫХ ДВИЖКОВ ===
+  # === Оптимизированные таймауты ===
   - name: arxiv
-    timeout: 5.0  # уменьшено с 10.0
+    timeout: 5.0
 
   - name: pubmed
     timeout: 5.0
 
   - name: crossref
-    timeout: 8.0  # уменьшено с 30
+    timeout: 8.0
 
-  - name: openairepublications
-    timeout: 5.0
+  # === API ключи (раскомментируй и добавь свои) ===
+  
+  # Brave Search API (бесплатно: 2000 запросов/месяц)
+  # Получить: https://brave.com/search/api/
+  # - name: brave
+  #   disabled: false
+  #   api_key: "YOUR_BRAVE_API_KEY"
+  
+  # Google Custom Search (бесплатно: 100 запросов/день)
+  # Получить: https://console.cloud.google.com/
+  # - name: google
+  #   disabled: false
+  #   google_api_key: "YOUR_API_KEY"
+  #   google_cse_id: "YOUR_CSE_ID"
 
-  - name: openairedatasets
-    timeout: 5.0
-
-  # === CUSTOM DEV ENGINES ===
-  # cppreference — C++ документация
+  # === Custom dev-движки ===
+  
+  # cppreference (C++ документация)
   - name: cppreference
     engine: xpath
     shortcut: cpp
-    categories: [it, science]
+    categories: it
+    disabled: false
+    timeout: 4.0
     paging: false
     search_url: https://en.cppreference.com/mwiki/index.php?search={query}
-    url_xpath: //ul[@class='mw-search-results']/li//a/@href
-    title_xpath: //ul[@class='mw-search-results']/li//a
-    content_xpath: //ul[@class='mw-search-results']/li/div[@class='searchresult']
+    url_xpath: //li[contains(@class,'mw-search-result')]/div[@class='mw-search-result-heading']/a/@href
+    title_xpath: //li[contains(@class,'mw-search-result')]/div[@class='mw-search-result-heading']/a
+    content_xpath: //li[contains(@class,'mw-search-result')]/div[@class='searchresult']
     about:
       website: https://en.cppreference.com
-      wikidata_id: Q1058560
+      wikidata_id: Q30093777
       use_official_api: false
       require_api_key: false
       results: HTML
 
-  # cppreference (русская версия)
+  # cppreference на русском
   - name: cppreference ru
     engine: xpath
     shortcut: cppru
-    categories: [it, science]
+    categories: it
+    disabled: false
+    timeout: 4.0
     paging: false
     search_url: https://ru.cppreference.com/mwiki/index.php?search={query}
-    url_xpath: //ul[@class='mw-search-results']/li//a/@href
-    title_xpath: //ul[@class='mw-search-results']/li//a
-    content_xpath: //ul[@class='mw-search-results']/li/div[@class='searchresult']
+    url_xpath: //li[contains(@class,'mw-search-result')]/div[@class='mw-search-result-heading']/a/@href
+    title_xpath: //li[contains(@class,'mw-search-result')]/div[@class='mw-search-result-heading']/a
+    content_xpath: //li[contains(@class,'mw-search-result')]/div[@class='searchresult']
     about:
       website: https://ru.cppreference.com
+      wikidata_id: Q30093777
       use_official_api: false
       require_api_key: false
       results: HTML
 
-  # DevDocs.io — унифицированная документация
+  # DevDocs (унифицированная документация)
   - name: devdocs
     engine: xpath
     shortcut: dd
-    categories: [it]
-    paging: false
-    search_url: https://devdocs.io/#q={query}
-    url_xpath: //div[@class='_list-item']/a/@href
-    title_xpath: //div[@class='_list-item']/a
-    content_xpath: //div[@class='_list-item']/div[@class='_snippet']
+    categories: it
+    disabled: false
     timeout: 3.0
+    paging: false
+    search_url: https://devdocs.io/search?q={query}
+    url_xpath: //a[contains(@class,'_item')]/@href
+    title_xpath: //a[contains(@class,'_item')]//span[@class='_name']
+    content_xpath: //a[contains(@class,'_item')]//span[@class='_type']
     about:
       website: https://devdocs.io
       use_official_api: false
       require_api_key: false
       results: HTML
 
-# Плагины — только полезные
 plugins:
-
   searx.plugins.calculator.SXNGPlugin:
-    active: true
-
-  searx.plugins.infinite_scroll.SXNGPlugin:
     active: true
 
   searx.plugins.hash_plugin.SXNGPlugin:
     active: true
 
-  searx.plugins.unit_converter.SXNGPlugin:
+  searx.plugins.infinite_scroll.SXNGPlugin:
+    active: true
+
+  searx.plugins.open_access.SXNGPlugin:
     active: true
 
   searx.plugins.tracker_url_remover.SXNGPlugin:
     active: true
 
-  searx.plugins.hostnames.SXNGPlugin:
+  searx.plugins.unit_converter.SXNGPlugin:
     active: true
-
-  searx.plugins.time_zone.SXNGPlugin:
-    active: true
-
-  searx.plugins.self_info.SXNGPlugin:
-    active: true
-
-  searx.plugins.ahmia_filter.SXNGPlugin:
-    active: true
-
-  # Отключаем ненужные
-  searx.plugins.oa_doi_rewrite.SXNGPlugin:
-    active: false
-
-  searx.plugins.tor_check.SXNGPlugin:
-    active: false
