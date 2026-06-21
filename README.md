@@ -29,7 +29,7 @@ git clone https://github.com/e-gleba/searxng-docker.git && cd searxng-docker && 
 
 ---
 
-## 🐧 Установка Docker (если ещё не установлен)
+## 🐧 Установка Docker — Linux
 
 ### Ubuntu / Debian
 
@@ -59,6 +59,84 @@ sudo usermod -aG docker $USER
 
 ---
 
+## 🪟 Установка Docker — Windows 11
+
+### Требования
+
+| Компонент | Минимум |
+|---|---|
+| ОС | Windows 11 (22H2+) или Windows 10 (22H2+) |
+| CPU | 64-bit, поддержка виртуализации (VT-x / AMD-V) |
+| RAM | 4 ГБ (рекомендуется 8+) |
+| WSL | WSL 2 (устанавливается автоматически) |
+
+### Шаг 1 — Включить WSL 2
+
+Откройте **PowerShell от имени администратора** и выполните:
+
+```powershell
+wsl --install
+```
+
+Это установит WSL 2 + Ubuntu по умолчанию. **Перезагрузите ПК** после завершения.
+
+> 📖 Подробная инструкция Microsoft: [Install WSL on Windows](https://learn.microsoft.com/en-us/windows/wsl/install)
+
+### Шаг 2 — Установить Docker Desktop
+
+1. Скачайте установщик: [Docker Desktop for Windows](https://www.docker.com/products/docker-desktop/)
+2. Запустите `Docker%20Desktop%20Installer.exe`
+3. В установщике убедитесь, что включены:
+   - ✅ **Use WSL 2 instead of Hyper-V** (рекомендуется)
+   - ✅ **Add shortcut to desktop**
+4. Нажмите **OK** → дождитесь окончания → **перезагрузите ПК**
+
+> 📖 Официальный гайд Docker: [Install Docker Desktop on Windows](https://docs.docker.com/desktop/setup/install/windows-install/)
+
+### Шаг 3 — Настроить Docker Desktop
+
+1. Запустите **Docker Desktop**
+2. Перейдите в **Settings** (⚙️) → **General**:
+   - ✅ **Start Docker Desktop when you log in**
+   - ✅ **Use the WSL 2 based engine**
+3. Перейдите в **Settings** → **Resources** → **WSL integration**:
+   - ✅ **Enable integration with my default WSL distro**
+   - Включите интеграцию для нужных дистрибутивов (Ubuntu и т.д.)
+4. Нажмите **Apply & Restart**
+
+### Шаг 4 — Запустить SearXNG
+
+Откройте **PowerShell** или **Windows Terminal** в папке проекта:
+
+```powershell
+# Клонируем репозиторий
+git clone https://github.com/e-gleba/searxng-docker.git
+cd searxng-docker
+
+# Создаём .env
+copy .env.example .env
+
+# Запускаем
+docker compose up -d
+```
+
+Откройте **http://localhost:8080** в браузере — готово.
+
+### ⚡ Частые проблемы на Windows
+
+| Проблема | Решение |
+|---|---|
+| `docker: command not found` | Перезапустите терминал после установки Docker Desktop |
+| `WSL 2 is not installed` | Выполните `wsl --install` и перезагрузитесь |
+| Порт 8080 занят | Измените `SEARXNG_PORT` в `.env` на другой (например, `8888`) |
+| `permission denied` при `docker compose` | Убедитесь, что Docker Desktop запущен (иконка в трее) |
+| Контейнер падает с `exec format error` | В Docker Desktop → Settings → Docker Engine → убедитесь, что архитектура x86_64 |
+| Медленная работа | Settings → Resources → увеличьте RAM/CPU для WSL 2 |
+
+> 💡 **Совет:** Для удобной работы используйте [Windows Terminal](https://aka.ms/terminal) + [Oh My Posh](https://ohmyposh.dev/) — красивый prompt с Git-статусом.
+
+---
+
 ## 📦 Установка и запуск
 
 ```bash
@@ -67,7 +145,8 @@ git clone https://github.com/e-gleba/searxng-docker.git
 cd searxng-docker
 
 # 2. Создаём .env из примера (опционально — можно редактировать)
-cp .env.example .env
+cp .env.example .env        # Linux / macOS
+# copy .env.example .env    # Windows (PowerShell / CMD)
 
 # 3. Запускаем
 docker compose up -d
@@ -105,8 +184,11 @@ docker compose restart
 **Обязательно** смените `secret_key` в `searxng/settings.yml` на случайную строку:
 
 ```bash
-# Генерация случайного ключа
+# Linux / macOS
 openssl rand -hex 32
+
+# Windows (PowerShell)
+[System.BitConverter]::ToString((1..32 | ForEach-Object { Get-Random -Minimum 0 -Maximum 256 })).Replace("-","").ToLower()
 ```
 
 Скопируйте результат в поле `server.secret_key`.
