@@ -19,4 +19,8 @@ Thumbs.db
 *~
 
 # Секреты
-searxng/searxng.key
+core-config/searxng.key
+core-config/favicons.toml
+
+# Старая структура (deprecated)
+searxng/
