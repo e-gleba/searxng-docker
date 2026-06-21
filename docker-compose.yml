@@ -29,6 +29,43 @@ services:
     volumes:
       - valkey-data:/data/
 
+  # MCP сервер для подключения к LLM клиентам (Ollama, LM Studio, Claude Desktop, Cursor)
+  mcp:
+    container_name: searxng-mcp
+    image: overtlids/mcp-searxng-enhanced:latest
+    restart: always
+    ports:
+      - "8000:8000"  # HTTP MCP endpoint
+    environment:
+      - SEARXNG_ENGINE_API_BASE_URL=http://searxng-core:8080/search
+      - MCP_HTTP_HOST=0.0.0.0
+      - MCP_HTTP_PORT=8000
+      - DESIRED_TIMEZONE=Europe/Moscow
+      - RETURNED_SCRAPPED_PAGES_NO=3
+      - SCRAPPED_PAGES_NO=5
+      - PAGE_CONTENT_WORDS_LIMIT=5000
+      - CITATION_LINKS=True
+      - MAX_IMAGE_RESULTS=10
+      - MAX_VIDEO_RESULTS=10
+      - MAX_FILE_RESULTS=5
+      - MAX_MAP_RESULTS=5
+      - MAX_SOCIAL_RESULTS=5
+      - TRAFILATURA_TIMEOUT=15
+      - SCRAPING_TIMEOUT=20
+      - CACHE_MAXSIZE=100
+      - CACHE_TTL_MINUTES=5
+      - CACHE_MAX_AGE_MINUTES=30
+      - RATE_LIMIT_REQUESTS_PER_MINUTE=10
+      - RATE_LIMIT_TIMEOUT_SECONDS=60
+      - IGNORED_WEBSITES=
+    depends_on:
+      - core
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
 volumes:
   core-data:
   valkey-data:
