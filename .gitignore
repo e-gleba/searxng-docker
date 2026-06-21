@@ -1,4 +1,8 @@
-# Environment variables
+# =============================================================================
+# Git Ignore Rules — SearXNG Docker
+# =============================================================================
+
+# Environment variables (NEVER commit secrets)
 .env
 .env.local
 .env.*.local
@@ -6,6 +10,7 @@
 # Docker volumes (runtime data)
 /data/
 /cache/
+/logs/
 
 # Logs
 *.log
@@ -18,16 +23,21 @@ Thumbs.db
 *.swo
 *~
 
-# IDE
+# IDE and editor files
 .vscode/
 .idea/
 *.iml
+*.sublime-project
+*.sublime-workspace
+.history/
 
-# Secrets
+# Secrets and keys
 core-config/searxng.key
 core-config/favicons.toml
 *.pem
 *.key
+*.crt
+*.p12
 
 # Build artifacts
 __pycache__/
@@ -43,3 +53,26 @@ dist/
 tmp/
 temp/
 *.tmp
+*.bak
+*.swp
+
+# Backup files
+*.orig
+*.backup
+*~
+
+# Test coverage
+htmlcov/
+.coverage
+coverage.xml
+
+# Node modules (if any frontend tools)
+node_modules/
+package-lock.json
+yarn.lock
+
+# Terraform (if infrastructure code added)
+.terraform/
+*.tfstate
+*.tfstate.backup
+.terraform.lock.hcl
