@@ -4,6 +4,27 @@
 # Architecture: SearXNG Core + Valkey Cache
 # Standards: Docker Compose v2, Health Checks, Structured Logging
 # Auth: None (local-first, no-auth ready for development)
+#
+# ENDPOINTS AFTER DEPLOYMENT:
+# ┌─────────────────────────────────────────────────────────────────────────┐
+# │ Service      │ Container        │ Port  │ Status    │ URL              │
+# ├─────────────────────────────────────────────────────────────────────────┤
+# │ SearXNG      │ searxng-core     │ 8080  │ ✓ Public  │ localhost:8080   │
+# │ Valkey       │ searxng-valkey   │ 6379  │ ✗ Internal│ (not exposed)    │
+# └─────────────────────────────────────────────────────────────────────────┘
+#
+# SEARXNG ENDPOINTS:
+#   • Web UI:        http://localhost:8080/
+#   • Search API:    http://localhost:8080/search?q={query}&format=json
+#   • Preferences:   http://localhost:8080/preferences
+#   • Health Check:  http://localhost:8080/healthz
+#
+# HEALTH CHECK COMMANDS:
+#   • docker compose ps
+#   • curl -f http://localhost:8080/healthz
+#   • docker exec searxng-valkey valkey-cli ping
+#
+# See ENDPOINTS.md for complete API documentation
 # =============================================================================
 
 name: searxng
