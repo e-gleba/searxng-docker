@@ -1,12 +1,55 @@
-# Production-grade SearXNG Docker Stack
-# Based on official SearXNG 2026 architecture with Granian + Valkey + MCP
+# =============================================================================
+# SearXNG Production Stack
+# =============================================================================
+# Architecture: SearXNG Core + Valkey Cache + MCP Server
+# Standards: Docker Compose v2, Health Checks, Structured Logging
+# Auth: None (local-first, no-auth ready for development)
+# =============================================================================
 
 name: searxng
 
 services:
-  # SearXNG Core - Search Engine
+  # ---------------------------------------------------------------------------
+  # Valkey - High-performance cache (Redis-compatible)
+  # ---------------------------------------------------------------------------
+  valkey:
+    image: valkey/valkey:8-alpine
+    container_name: searxng-valkey
+    restart: unless-stopped
+    command: >
+      valkey-server
+      --save 60 1
+      --loglevel notice
+      --maxmemory 256mb
+      --maxmemory-policy allkeys-lru
+    volumes:
+      - valkey-data:/data
+    healthcheck:
+      test: ["CMD", "valkey-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+        tag: "searxng.valkey"
+    networks:
+      - searxng-internal
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 128M
+
+  # ---------------------------------------------------------------------------
+  # SearXNG Core - Privacy-respecting metasearch engine
+  # ---------------------------------------------------------------------------
   core:
-    image: docker.io/searxng/searxng:latest
+    image: searxng/searxng:latest
     container_name: searxng-core
     restart: unless-stopped
     ports:
@@ -15,7 +58,8 @@ services:
       - ./core-config:/etc/searxng:ro
       - core-data:/var/cache/searxng
     environment:
-      - SEARXNG_BASE_URL=http://localhost:8080/
+      SEARXNG_BASE_URL: http://localhost:8080/
+      SEARXNG_SECRET: changeme-use-openssl-rand-hex-32
     depends_on:
       valkey:
         condition: service_healthy
@@ -24,65 +68,99 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 10s
+      start_period: 30s
     logging:
-      driver: "json-file"
+      driver: json-file
       options:
-        max-size: "10m"
-        max-file: "3"
+        max-size: "20m"
+        max-file: "5"
+        tag: "searxng.core"
+    networks:
+      - searxng-internal
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+        reservations:
+          memory: 512M
 
-  # Valkey - Redis-compatible cache
-  valkey:
-    image: docker.io/valkey/valkey:9-alpine
-    container_name: searxng-valkey
-    restart: unless-stopped
-    command: valkey-server --save 30 1 --loglevel warning
-    volumes:
-      - valkey-data:/data
-    healthcheck:
-      test: ["CMD", "valkey-cli", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "5m"
-        max-file: "2"
-
-  # MCP Server - Model Context Protocol for LLM integration
+  # ---------------------------------------------------------------------------
+  # MCP Server - Model Context Protocol for LLM clients
+  # ---------------------------------------------------------------------------
   mcp:
     build:
-      context: .
-      dockerfile: Dockerfile.mcp
-    image: searxng-mcp:latest
+      context: ./mcp-server
+      dockerfile: Dockerfile
+    image: searxng-mcp:local
     container_name: searxng-mcp
     restart: unless-stopped
     ports:
       - "8000:8000"
     environment:
-      - SEARXNG_URL=http://searxng-core:8080
+      SEARXNG_ENGINE_API_BASE_URL: http://searxng-core:8080/search
+      DESIRED_TIMEZONE: Europe/Moscow
+      MCP_HTTP_HOST: "0.0.0.0"
+      MCP_HTTP_PORT: "8000"
+      ODS_CONFIG_PATH: /config/ods_config.json
+      RETURNED_SCRAPPED_PAGES_NO: "3"
+      SCRAPPED_PAGES_NO: "5"
+      PAGE_CONTENT_WORDS_LIMIT: "5000"
+      CITATION_LINKS: "true"
+      MAX_IMAGE_RESULTS: "10"
+      MAX_VIDEO_RESULTS: "10"
+      MAX_FILE_RESULTS: "5"
+      MAX_MAP_RESULTS: "5"
+      MAX_SOCIAL_RESULTS: "5"
+      TRAFILATURA_TIMEOUT: "15"
+      SCRAPING_TIMEOUT: "20"
+      CACHE_MAXSIZE: "100"
+      CACHE_TTL_MINUTES: "5"
+      CACHE_MAX_AGE_MINUTES: "30"
+      RATE_LIMIT_REQUESTS_PER_MINUTE: "10"
+      RATE_LIMIT_TIMEOUT_SECONDS: "60"
+      IGNORED_WEBSITES: ""
     depends_on:
       core:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      test: ["CMD", "python", "-c", "import httpx; httpx.get('http://localhost:8000/health', timeout=5.0).raise_for_status()"]
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 15s
+      start_period: 20s
     logging:
-      driver: "json-file"
+      driver: json-file
       options:
-        max-size: "10m"
-        max-file: "3"
+        max-size: "20m"
+        max-file: "5"
+        tag: "searxng.mcp"
+    networks:
+      - searxng-internal
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+        reservations:
+          memory: 256M
 
+# =============================================================================
+# Networks
+# =============================================================================
+networks:
+  searxng-internal:
+    driver: bridge
+    name: searxng-internal
+    ipam:
+      config:
+        - subnet: 172.28.0.0/16
+
+# =============================================================================
+# Volumes
+# =============================================================================
 volumes:
   core-data:
     driver: local
+    name: searxng-core-data
   valkey-data:
     driver: local
-
-networks:
-  default:
-    name: searxng-network
+    name: searxng-valkey-data
