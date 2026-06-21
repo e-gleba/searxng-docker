@@ -1,0 +1,19 @@
+# Production-grade MCP server for SearXNG
+# Based on mcp-proxy + mcp-searxng package
+FROM ghcr.io/sparfenyuk/mcp-proxy:latest
+
+# Install the MCP server package
+RUN pip install --no-cache-dir mcp-searxng
+
+# Set environment variables
+ENV SEARXNG_URL=http://searxng-core:8080
+
+# Expose SSE port
+EXPOSE 8000
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+  CMD curl -f http://localhost:8000/health || exit 1
+
+# Run mcp-proxy with SSE transport
+CMD ["--sse-host=0.0.0.0", "--sse-port=8000", "mcp-searxng"]
