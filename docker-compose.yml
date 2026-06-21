@@ -1,54 +1,88 @@
-# Основано на офіційному шаблоні SearXNG 2026
-# Документація: https://docs.searxng.org/admin/installation-docker.html
+# Production-grade SearXNG Docker Stack
+# Based on official SearXNG 2026 architecture with Granian + Valkey + MCP
 
 name: searxng
 
 services:
+  # SearXNG Core - Search Engine
   core:
-    container_name: searxng-core
     image: docker.io/searxng/searxng:latest
-    restart: always
+    container_name: searxng-core
+    restart: unless-stopped
     ports:
       - "8080:8080"
     volumes:
-      - ./core-config/:/etc/searxng/
-      - core-data:/var/cache/searxng/
+      - ./core-config:/etc/searxng:ro
+      - core-data:/var/cache/searxng
+    environment:
+      - SEARXNG_BASE_URL=http://localhost:8080/
     depends_on:
-      - valkey
+      valkey:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/healthz"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
     logging:
-      driver: json-file
+      driver: "json-file"
       options:
         max-size: "10m"
         max-file: "3"
 
+  # Valkey - Redis-compatible cache
   valkey:
-    container_name: searxng-valkey
     image: docker.io/valkey/valkey:9-alpine
+    container_name: searxng-valkey
+    restart: unless-stopped
     command: valkey-server --save 30 1 --loglevel warning
-    restart: always
     volumes:
-      - valkey-data:/data/
-
-  # MCP сервер для LLM клієнтів (SSE транспорт на порту 32769)
-  mcp:
-    container_name: searxng-mcp
-    image: ghcr.io/the-ai-workshops/searxng-mcp-server:latest
-    restart: always
-    ports:
-      - "32769:32769"
-    environment:
-      - SEARXNG_BASE_URL=http://searxng-core:8080
-      - HOST=0.0.0.0
-      - PORT=32769
-      - TRANSPORT=sse
-    depends_on:
-      - core
+      - valkey-data:/data
+    healthcheck:
+      test: ["CMD", "valkey-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     logging:
-      driver: json-file
+      driver: "json-file"
+      options:
+        max-size: "5m"
+        max-file: "2"
+
+  # MCP Server - Model Context Protocol for LLM integration
+  mcp:
+    build:
+      context: .
+      dockerfile: Dockerfile.mcp
+    image: searxng-mcp:latest
+    container_name: searxng-mcp
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - SEARXNG_URL=http://searxng-core:8080
+    depends_on:
+      core:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    logging:
+      driver: "json-file"
       options:
         max-size: "10m"
         max-file: "3"
 
 volumes:
   core-data:
+    driver: local
   valkey-data:
+    driver: local
+
+networks:
+  default:
+    name: searxng-network
