@@ -1,6 +1,6 @@
 # 🔍 SearXNG Docker
 
-> Приватный мета-поисковик **SearXNG** — оптимизирован для скорости и эффективности.  
+> Приватный мета-поисковик **SearXNG** + **MCP сервер** для LLM клиентов.  
 > Основано на [официальной архитектуре 2026](https://docs.searxng.org/admin/installation-docker.html) с **Granian** + **Valkey**.
 
 ---
@@ -13,9 +13,129 @@ cd searxng-docker
 docker compose up -d
 ```
 
-Откройте **http://localhost:8080** — поиск готов.
+**Готово!**
 
-**Всё. Никаких `.env` файлов не нужно.**
+- 🔍 **SearXNG**: http://localhost:8080 — веб-интерфейс поиска
+- 🤖 **MCP сервер**: http://localhost:8000/mcp — для LLM клиентов (Ollama, LM Studio, Claude Desktop, Cursor)
+
+**Никаких `.env` файлов не нужно.**
+
+---
+
+## 🤖 MCP сервер (для LLM)
+
+MCP (Model Context Protocol) сервер позволяет **локальным LLM моделям** искать в интернете через ваш SearXNG.
+
+### Доступные tools
+
+| Tool | Описание |
+|------|----------|
+| `search_web(query, category?)` | Веб-поиск (general, images, videos, files, map, social) |
+| `get_website(url)` | Скрейпинг содержимого страницы |
+| `get_current_datetime()` | Текущие дата/время |
+
+### Подключение к LLM клиентам
+
+#### Claude Desktop
+
+Откройте `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS) или `%APPDATA%\Claude\claude_desktop_config.json` (Windows):
+
+```json
+{
+  "mcpServers": {
+    "searxng": {
+      "url": "http://localhost:8000/mcp"
+    }
+  }
+}
+```
+
+Перезапустите Claude Desktop.
+
+#### Cursor
+
+Settings → MCP → Add MCP Server:
+
+```
+Type: SSE
+URL: http://localhost:8000/mcp
+```
+
+Или в `.cursor/mcp.json`:
+
+```json
+{
+  "mcpServers": {
+    "searxng": {
+      "url": "http://localhost:8000/mcp"
+    }
+  }
+}
+```
+
+#### LM Studio
+
+Настройки → MCP Servers → Add:
+
+```
+URL: http://localhost:8000/mcp
+```
+
+#### Ollama + Open WebUI
+
+Если используете [Open WebUI](https://openwebui.com/) с Ollama:
+
+Settings → Tools → Add MCP Server:
+
+```
+http://localhost:8000/mcp
+```
+
+#### Continue (VS Code extension)
+
+В `~/.continue/config.json`:
+
+```json
+{
+  "mcpServers": [
+    {
+      "name": "searxng",
+      "url": "http://localhost:8000/mcp"
+    }
+  ]
+}
+```
+
+### Пример использования
+
+После подключения LLM сможет:
+
+```
+Пользователь: Найди последние новости о Rust 2026
+LLM: [использует search_web] → возвращает результаты из Google, DuckDuckGo, Brave
+LLM: [использует get_website] → читает содержимое страницы
+LLM: Вот что я нашел...
+```
+
+### Настройка MCP сервера
+
+Все настройки через environment variables в `docker-compose.yml`:
+
+```yaml
+environment:
+  - SEARXNG_ENGINE_API_BASE_URL=http://searxng-core:8080/search  # URL SearXNG
+  - MCP_HTTP_PORT=8000                                           # Порт MCP
+  - DESIRED_TIMEZONE=Europe/Moscow                               # Часовой пояс
+  - MAX_IMAGE_RESULTS=10                                         # Макс картинок
+  - PAGE_CONTENT_WORDS_LIMIT=5000                                # Макс слов на страницу
+  - RATE_LIMIT_REQUESTS_PER_MINUTE=10                            # Rate limiting
+```
+
+Перезапуск после изменений:
+
+```bash
+docker compose restart mcp
+```
 
 ---
 
@@ -44,6 +164,7 @@ SearXNG поддерживает vim-навигацию:
 - ✅ `docker-compose.yml` на базе официального шаблона 2026
 - ✅ **Granian** (Rust ASGI-сервер) вместо устаревшего uWSGI
 - ✅ **Valkey 9** (Redis fork) для кэширования
+- ✅ **MCP сервер** для подключения LLM клиентов (Ollama, LM Studio, Claude Desktop, Cursor)
 - ✅ `settings.yml` с `use_default_settings: true` — загружает все официальные дефолты
 - ✅ **Оптимизировано для скорости** — уменьшены таймауты, отключены медленные движки
 - ✅ **Vim hotkeys** — навигация без мыши
@@ -210,23 +331,25 @@ cd searxng-docker
 docker compose up -d
 ```
 
-SearXNG будет доступен на **http://localhost:8080**.
-
-Запускаются **2 контейнера**:
-- `searxng-core` — поисковик (Granian ASGI)
+Запускаются **3 контейнера**:
+- `searxng-core` — поисковик (Granian ASGI) на порту **8080**
 - `searxng-valkey` — кэш Valkey 9 (Redis fork)
+- `searxng-mcp` — MCP сервер для LLM на порту **8000**
+
+**SearXNG**: http://localhost:8080  
+**MCP endpoint**: http://localhost:8000/mcp
 
 ---
 
 ## 🔥 Не открывается на 8080? Решение
 
-### 1. Проверьте, что оба контейнера запущены
+### 1. Проверьте, что все контейнеры запущены
 
 ```bash
 docker compose ps
 ```
 
-Должны быть `Up`: `searxng-core` и `searxng-valkey`. Если `Exited` или `Restarting`:
+Должны быть `Up`: `searxng-core`, `searxng-valkey`, `searxng-mcp`. Если `Exited` или `Restarting`:
 
 ```bash
 docker compose logs -f core
@@ -237,6 +360,9 @@ docker compose logs -f core
 ```bash
 # Логи SearXNG
 docker compose logs -f core
+
+# Логи MCP
+docker compose logs -f mcp
 
 # Логи Valkey
 docker compose logs -f valkey
@@ -320,6 +446,9 @@ SearXNG использует **Granian** (Rust ASGI-сервер). Логи пи
 ```bash
 # Логи SearXNG в реальном времени
 docker compose logs -f core
+
+# Логи MCP сервера
+docker compose logs -f mcp
 ```
 
 Что видно в логах:
@@ -327,11 +456,13 @@ docker compose logs -f core
 - HTTP-запросы к SearXNG (GET/POST, URL, статус, время в мс)
 - Запросы к поисковым движкам
 - Ошибки движков (timeout, 403, 429)
+- MCP requests от LLM клиентов
 
 ### Пример лога при поиске
 
 ```
 searxng-core  | [INFO] granian::http: 172.18.0.1 - "POST /search HTTP/1.1" 200 15234 (1823ms)
+searxng-mcp   | INFO:     172.18.0.1:54321 - "POST /mcp HTTP/1.1" 200 OK
 ```
 
 ---
@@ -452,7 +583,7 @@ engines:
 
 ```
 searxng-docker/
-├── docker-compose.yml          # Оркестрация (SearXNG + Valkey)
+├── docker-compose.yml          # Оркестрация (SearXNG + Valkey + MCP)
 ├── core-config/
 │   └── settings.yml            # ВСЕ настройки SearXNG (единственный конфиг)
 ├── .env.example                # Пример необязательных переменных
@@ -475,6 +606,7 @@ searxng-docker/
 - **Valkey** для кэширования (быстрее и безопаснее Redis)
 - **Оптимизированные таймауты** — быстрее отклик
 - **Vim hotkeys** — навигация без мыши
+- **MCP сервер** — приватный поиск для LLM (без API ключей, без утечки данных)
 
 > Для **публичного** инстанса включите `server.limiter: true` и настройте reverse proxy (nginx/caddy).
 
