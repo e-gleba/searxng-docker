@@ -19,6 +19,22 @@ docker compose up -d
 
 ---
 
+## ⌨️ Vim hotkeys
+
+SearXNG поддерживает vim-навигацию:
+
+| Клавиша | Действие |
+|---|---|
+| `j` / `k` | Вниз / вверх по результатам |
+| `h` / `l` | Предыдущая / следующая страница |
+| `/` | Фокус на поле поиска |
+| `Enter` | Открыть выбранный результат |
+| `o` | Открыть результат в новой вкладке |
+| `n` / `N` | Следующая / предыдущая категория |
+| `?` | Показать справку по hotkeys |
+
+---
+
 ## 📋 Описание
 
 [SearXNG](https://github.com/searxng/searxng) — свободный мета-поисковик, который агрегирует результаты из Google, DuckDuckGo, Brave и десятков других движков, **не отслеживая вас**.
@@ -30,16 +46,42 @@ docker compose up -d
 - ✅ **Valkey 9** (Redis fork) для кэширования
 - ✅ `settings.yml` с `use_default_settings: true` — загружает все официальные дефолты
 - ✅ **Оптимизировано для скорости** — уменьшены таймауты, отключены медленные движки
+- ✅ **Vim hotkeys** — навигация без мыши
+- ✅ **Dark theme** — современная темная тема
 - ✅ **Custom dev-движки** — cppreference, devdocs.io
 - ✅ Русская локаль из коробки
 - ✅ **Одна команда для запуска** — никаких лишних файлов
 
 ---
 
+## 🎨 Тема
+
+Используется встроенная тема `simple` с **dark** стилем — минималистичная, быстрая, современная.
+
+**Почему не catppuccin?** Catppuccin SearXNG [архивирован](https://github.com/catppuccin/SearXNG) и не поддерживается.
+
+**Почему не paulgoio/searxng?** Это отдельный Docker образ с модифицированной темой, не просто тема.
+
+**Встроенная тема `simple`** — официальная, поддерживаемая, быстрая. Имеет 4 стиля:
+- `auto` — следует системной теме
+- `light` — светлая
+- `dark` — темная (используется)
+- `black` — черная (AMOLED)
+
+Изменить стиль в `core-config/settings.yml`:
+
+```yaml
+ui:
+  theme_args:
+    simple_style: black  # или auto, light, dark
+```
+
+---
+
 ## ⚡ Оптимизации
 
 ### Удалено (bloat)
-- ❌ Bing (web, images, news, videos)
+- ❌ Bing (все виды)
 - ❌ Yahoo
 - ❌ Qwant
 - ❌ Mojeek (медленный)
@@ -51,9 +93,9 @@ docker compose up -d
 - ⚡ Уменьшены таймауты для arXiv, PubMed, CrossRef
 
 ### Добавлено (custom)
-- 🛠️ **cppreference** — C++ документация (`!cpp`)
-- 🛠️ **cppreference ru** — русская версия (`!cppru`)
-- 🛠️ **devdocs** — унифицированная документация (`!dd`)
+- 🛠️ **cppreference** (`!cpp`) — C++ документация
+- 🛠️ **cppreference ru** (`!cppru`) — русская версия
+- 🛠️ **devdocs** (`!dd`) — унифицированная документация
 
 ### Включено
 - ✅ Yandex, Yandex Images (были отключены по умолчанию)
@@ -349,6 +391,18 @@ server:
 
 Затем `docker compose down && docker compose up -d`.
 
+### Смена темы
+
+Изменить стиль темы (auto, light, dark, black):
+
+```yaml
+ui:
+  theme_args:
+    simple_style: black  # AMOLED-friendly
+```
+
+Затем `docker compose restart core`.
+
 ---
 
 ## 🔧 Управление движками (engines)
@@ -392,17 +446,6 @@ engines:
     disabled: true
 ```
 
-### Добавление тем
-
-Темы меняются в секции `ui`:
-
-```yaml
-ui:
-  default_theme: simple      # simple, oscar, pix-art, legacy
-  theme_args:
-    simple_style: auto       # auto, light, dark
-```
-
 ---
 
 ## 📁 Структура репозитория
@@ -431,6 +474,7 @@ searxng-docker/
 - **Телеметрия отключена** (`enable_metrics: false`)
 - **Valkey** для кэширования (быстрее и безопаснее Redis)
 - **Оптимизированные таймауты** — быстрее отклик
+- **Vim hotkeys** — навигация без мыши
 
 > Для **публичного** инстанса включите `server.limiter: true` и настройте reverse proxy (nginx/caddy).
 
