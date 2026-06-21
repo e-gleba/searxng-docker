@@ -6,14 +6,15 @@ name: searxng
 services:
   core:
     container_name: searxng-core
-    image: docker.io/searxng/searxng:${SEARXNG_VERSION:-latest}
+    image: docker.io/searxng/searxng:latest
     restart: always
     ports:
-      - ${SEARXNG_HOST:+${SEARXNG_HOST}:}${SEARXNG_PORT:-8080}:${SEARXNG_PORT:-8080}
-    env_file: ./.env
+      - "8080:8080"
     volumes:
-      - ./core-config/:/etc/searxng/:Z
+      - ./core-config/:/etc/searxng/
       - core-data:/var/cache/searxng/
+    depends_on:
+      - valkey
     logging:
       driver: json-file
       options:

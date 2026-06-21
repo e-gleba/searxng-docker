@@ -1,9 +1,11 @@
 # ============================================
 # Конфигурация SearXNG — безопасные дефолты (2026)
 # Документация: https://docs.searxng.org/admin/settings/
+#
+# Это ЕДИНСТВЕННОЕ место для настроек SearXNG.
+# Порт и URL задаются ТОЛЬКО здесь.
 # ============================================
 
-# --- Общие настройки ---
 general:
   debug: false
   instance_name: "SearXNG"
@@ -12,47 +14,42 @@ general:
   contact_url: ""
   enable_metrics: false
 
-# --- Поиск ---
-search:
-  safe_search: 0  # 0=выкл, 1=умеренный, 2=строгий
-  autocomplete: "google"
-  default_lang: "auto"
-  max_page: 0  # 0 = без лимита
-  formats:
-    - html
-    - json  # включён JSON-формат для API-запросов
-
-# --- Сервер ---
 server:
   port: 8080
   bind_address: "0.0.0.0"
   base_url: "http://localhost:8080/"
-  limiter: false  # отключено для приватного инстанса
+  limiter: false
   public_instance: false
-  secret_key: "changeme"  # ОБЯЗАТЕЛЬНО смените на случайную строку!
+  secret_key: "changeme"  # ОБЯЗАТЕЛЬНО смените: openssl rand -hex 32
+  image_proxy: true
   method: "POST"
-  image_proxy: true  # проксирование картинок через SearXNG
-  default_http_headers:
-    X-Content-Type-Options: nosniff
-    X-Frame-Options: SAMEORIGIN
-    X-XSS-Protection: "1; mode=block"
-    Referrer-Policy: no-referrer
 
-# --- UI-настройки ---
+search:
+  safe_search: 0
+  autocomplete: "google"
+  default_lang: "auto"
+  formats:
+    - html
+    - json
+
 ui:
   static_use_hash: true
   default_theme: simple
   default_locale: "ru"
   theme_args:
-    simple_style: auto  # auto = следует системной теме
+    simple_style: auto
   results_on_new_tab: false
   infinite_scroll: true
   query_in_title: true
 
-# --- Движки (engines) ---
-# Включены только проверенные, приватные, без лишней телеметрии.
+outgoing:
+  request_timeout: 6.0
+  max_request_timeout: 15.0
+  pool_connections: 100
+  pool_maxsize: 20
+  enable_http2: true
+
 engines:
-  # --- Веб-поиск ---
   - name: duckduckgo
     engine: duckduckgo
     shortcut: ddg
@@ -83,7 +80,6 @@ engines:
     disabled: false
     timeout: 6.0
 
-  # --- Изображения ---
   - name: duckduckgo images
     engine: duckduckgo_extra
     categories: images
@@ -97,7 +93,6 @@ engines:
     disabled: false
     timeout: 6.0
 
-  # --- Видео ---
   - name: duckduckgo videos
     engine: duckduckgo_extra
     categories: videos
@@ -111,7 +106,6 @@ engines:
     disabled: false
     timeout: 10.0
 
-  # --- IT ---
   - name: stackoverflow
     engine: stackoverflow
     shortcut: st
@@ -130,7 +124,6 @@ engines:
     disabled: false
     timeout: 6.0
 
-  # --- Наука ---
   - name: arxiv
     engine: arxiv
     shortcut: ar
@@ -143,14 +136,12 @@ engines:
     disabled: false
     timeout: 10.0
 
-  # --- Карты ---
   - name: openstreetmap
     engine: openstreetmap
     shortcut: osm
     disabled: false
     timeout: 6.0
 
-  # --- Отключённые (шумные / с телеметрией) ---
   - name: bing
     engine: bing
     disabled: true
@@ -163,7 +154,6 @@ engines:
     engine: qwant
     disabled: true
 
-# --- Плагины ---
 plugins:
   - name: "Basic Calculator"
     disabled: false
@@ -179,11 +169,3 @@ plugins:
     disabled: false
   - name: "Unit converter plugin"
     disabled: false
-
-# --- Исходящие HTTP-запросы ---
-outgoing:
-  request_timeout: 6.0
-  max_request_timeout: 15.0
-  pool_connections: 100
-  pool_maxsize: 20
-  enable_http2: true
