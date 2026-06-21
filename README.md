@@ -23,6 +23,8 @@ git clone https://github.com/e-gleba/searxng-docker.git && cd searxng-docker && 
 
 - ✅ Минимальный `docker-compose.yml` для запуска
 - ✅ Преднастроенный `settings.yml` с безопасными дефолтами
+- ✅ `uwsgi.ini` — настройка сервера и логирования
+- ✅ `limiter.toml` — конфиг лимитера (отключён)
 - ✅ `.env.example` с понятными переменными
 - ✅ Отключённая телеметрия и лишние плагины
 - ✅ Русская локаль из коробки
@@ -85,7 +87,7 @@ wsl --install
 ### Шаг 2 — Установить Docker Desktop
 
 1. Скачайте установщик: [Docker Desktop for Windows](https://www.docker.com/products/docker-desktop/)
-2. Запустите `Docker%20Desktop%20Installer.exe`
+2. Запустите `Docker Desktop Installer.exe`
 3. В установщике убедитесь, что включены:
    - ✅ **Use WSL 2 instead of Hyper-V** (рекомендуется)
    - ✅ **Add shortcut to desktop**
@@ -132,6 +134,7 @@ docker compose up -d
 | `permission denied` при `docker compose` | Убедитесь, что Docker Desktop запущен (иконка в трее) |
 | Контейнер падает с `exec format error` | В Docker Desktop → Settings → Docker Engine → убедитесь, что архитектура x86_64 |
 | Медленная работа | Settings → Resources → увеличьте RAM/CPU для WSL 2 |
+| Пустая страница / ничего не грузится | Смотрите раздел [🔥 Не открывается на 8080](#-не-открывается-на-8080-решение) ниже |
 
 > 💡 **Совет:** Для удобной работы используйте [Windows Terminal](https://aka.ms/terminal) + [Oh My Posh](https://ohmyposh.dev/) — красивый prompt с Git-статусом.
 
@@ -153,6 +156,130 @@ docker compose up -d
 ```
 
 SearXNG будет доступен на **http://localhost:8080**.
+
+---
+
+## 🔥 Не открывается на 8080? Решение
+
+Если `http://localhost:8080` показывает пустую страницу или «не удаётся подключиться»:
+
+### 1. Проверьте, что контейнер запущен
+
+```bash
+docker compose ps
+```
+
+Статус должен быть `Up`. Если `Exited` или `Restarting` — смотрите логи:
+
+```bash
+docker compose logs -f
+```
+
+### 2. Проверьте логи в реальном времени
+
+```bash
+# Все логи
+docker compose logs -f
+
+# Только последние 50 строк
+docker compose logs --tail=50
+
+# Логи с таймштампами
+docker compose logs -f -t
+```
+
+В логах вы увидите:
+- Какие движки загружены
+- Какие URL запрашиваются при поиске
+- Ошибки подключения к движкам
+- HTTP-запросы (uWSGI пишет их автоматически)
+
+### 3. Проверьте, что порт свободен
+
+```bash
+# Linux
+ss -tlnp | grep 8080
+
+# Windows (PowerShell)
+netstat -ano | findstr "8080"
+```
+
+Если порт занят — измените `SEARXNG_PORT` в `.env`:
+
+```env
+SEARXNG_PORT=8888
+```
+
+Затем пересоздайте:
+
+```bash
+docker compose down && docker compose up -d
+```
+
+### 4. Убедитесь, что `./searxng/` содержит нужные файлы
+
+```bash
+ls searxng/
+# Должны быть: settings.yml  limiter.toml  uwsgi.ini
+```
+
+Если файлов нет (например, клонировали старую версию) — переклонируйте:
+
+```bash
+git pull origin main
+docker compose down && docker compose up -d
+```
+
+### 5. Полный сброс (удаляет данные и пересоздаёт)
+
+```bash
+docker compose down -v
+rm -rf data/
+docker compose up -d
+```
+
+### 6. Windows: проверьте WSL integration
+
+В Docker Desktop → Settings → Resources → WSL integration — ваша Ubuntu должна быть **включена**.
+
+---
+
+## 📊 Логирование
+
+SearXNG пишет логи через uWSGI в stdout/stderr контейнера.
+
+```bash
+# Смотреть логи в реальном времени
+docker compose logs -f searxng
+
+# Что видно в логах:
+# - HTTP-запросы к SearXNG (GET/POST, URL, статус, время)
+# - Запросы к поисковым движкам (какие URL, таймауты)
+# - Ошибки движков (timeout, 403, 429 и т.д.)
+# - Старт/стоп uWSGI воркеров
+```
+
+### Пример лога при поиске
+
+```
+[pid: 23|app: 0|req: 15/42] 172.17.0.1 () {48 vars in 842 bytes}
+  POST /search => generated 15234 bytes in 1823 msecs (HTTP/1.1 200)
+  8 headers in 312 bytes (1 switches on core 0)
+```
+
+### Включить детальный лог запросов
+
+Раскомментируйте строку в `searxng/uwsgi.ini`:
+
+```ini
+log-format = [%(addr)] %(method) %(uri) => %(status) (%(msecs)ms)
+```
+
+Затем перезапустите:
+
+```bash
+docker compose restart
+```
 
 ---
 
@@ -241,11 +368,13 @@ ui:
 
 ```
 searxng-docker/
-├── docker-compose.yml      # Оркестрация контейнеров
-├── .env.example            # Пример переменных окружения
+├── docker-compose.yml          # Оркестрация контейнеров
+├── .env.example                # Пример переменных окружения
 ├── searxng/
-│   └── settings.yml        # Конфиг SearXNG
-├── data/                   # Данные SearXNG (создаётся автоматически)
+│   ├── settings.yml            # Конфиг SearXNG
+│   ├── uwsgi.ini               # Настройки uWSGI-сервера и логирования
+│   └── limiter.toml            # Конфиг лимитера (отключён)
+├── data/                       # Данные SearXNG (создаётся автоматически)
 ├── README.md
 └── .gitignore
 ```
