@@ -1,27 +1,21 @@
 # ============================================
-# Конфигурация SearXNG — безопасные дефолты (2026)
-# Документация: https://docs.searxng.org/admin/settings/
-#
-# Это ЕДИНСТВЕННОЕ место для настроек SearXNG.
-# Порт и URL задаются ТОЛЬКО здесь.
+# SearXNG settings.yml — минимальный, на базе официальных дефолтов
+# https://docs.searxng.org/admin/settings/settings.html#use-default-settings
 # ============================================
 
+use_default_settings: true
+
 general:
-  debug: false
   instance_name: "SearXNG"
-  privacypolicy_url: false
-  donation_url: false
-  contact_url: ""
   enable_metrics: false
 
 server:
   port: 8080
   bind_address: "0.0.0.0"
+  secret_key: "changeme"
   base_url: "http://localhost:8080/"
-  limiter: false
-  public_instance: false
-  secret_key: "changeme"  # ОБЯЗАТЕЛЬНО смените: openssl rand -hex 32
   image_proxy: true
+  limiter: false
   method: "POST"
 
 search:
@@ -33,139 +27,84 @@ search:
     - json
 
 ui:
-  static_use_hash: true
   default_theme: simple
   default_locale: "ru"
   theme_args:
     simple_style: auto
-  results_on_new_tab: false
   infinite_scroll: true
-  query_in_title: true
 
 outgoing:
   request_timeout: 6.0
   max_request_timeout: 15.0
-  pool_connections: 100
-  pool_maxsize: 20
   enable_http2: true
 
+# Включаем движки, отключённые по умолчанию в официальном конфиге.
+# Все остальные (google, duckduckgo, brave, wikipedia, github,
+# stackoverflow, arxiv, openstreetmap, youtube и т.д.)
+# уже включены через use_default_settings: true
 engines:
-  - name: duckduckgo
-    engine: duckduckgo
-    shortcut: ddg
+  - name: yandex
     disabled: false
-    timeout: 6.0
 
-  - name: brave
-    engine: brave
-    shortcut: br
+  - name: yandex images
     disabled: false
-    timeout: 6.0
-
-  - name: mojeek
-    engine: mojeek
-    shortcut: mjk
-    disabled: false
-    timeout: 6.0
-
-  - name: wikipedia
-    engine: wikipedia
-    shortcut: wp
-    disabled: false
-    timeout: 3.0
-
-  - name: google
-    engine: google
-    shortcut: g
-    disabled: false
-    timeout: 6.0
-
-  - name: duckduckgo images
-    engine: duckduckgo_extra
-    categories: images
-    shortcut: ddgi
-    disabled: false
-    timeout: 6.0
-
-  - name: unsplash
-    engine: unsplash
-    shortcut: us
-    disabled: false
-    timeout: 6.0
-
-  - name: duckduckgo videos
-    engine: duckduckgo_extra
-    categories: videos
-    shortcut: ddgv
-    disabled: false
-    timeout: 6.0
-
-  - name: peerpipe
-    engine: peerpipe
-    shortcut: pp
-    disabled: false
-    timeout: 10.0
-
-  - name: stackoverflow
-    engine: stackoverflow
-    shortcut: st
-    disabled: false
-    timeout: 6.0
-
-  - name: github
-    engine: github
-    shortcut: gh
-    disabled: false
-    timeout: 6.0
-
-  - name: arch linux wiki
-    engine: archlinux
-    shortcut: al
-    disabled: false
-    timeout: 6.0
-
-  - name: arxiv
-    engine: arxiv
-    shortcut: ar
-    disabled: false
-    timeout: 10.0
-
-  - name: crossref
-    engine: crossref
-    shortcut: cr
-    disabled: false
-    timeout: 10.0
-
-  - name: openstreetmap
-    engine: openstreetmap
-    shortcut: osm
-    disabled: false
-    timeout: 6.0
 
   - name: bing
-    engine: bing
-    disabled: true
+    disabled: false
 
-  - name: yahoo
-    engine: yahoo
-    disabled: true
+  - name: mojeek
+    disabled: false
 
-  - name: qwant
-    engine: qwant
-    disabled: true
+  - name: mojeek images
+    disabled: false
 
+  - name: hackernews
+    disabled: false
+
+  - name: brave
+    disabled: false
+
+  - name: brave.images
+    disabled: false
+
+  - name: brave.videos
+    disabled: false
+
+  - name: brave.news
+    disabled: false
+
+# Плагины — официальный формат (dict с fully-qualified class names)
 plugins:
-  - name: "Basic Calculator"
-    disabled: false
-  - name: "Hash plugin"
-    disabled: false
-  - name: "Hostnames plugin"
-    disabled: false
-  - name: "Infinite scroll"
-    disabled: false
-  - name: "Tracker URL remover"
-    disabled: false
-  - name: "Open Access DOI rewrite"
-    disabled: false
-  - name: "Unit converter plugin"
-    disabled: false
+
+  searx.plugins.calculator.SXNGPlugin:
+    active: true
+
+  searx.plugins.infinite_scroll.SXNGPlugin:
+    active: true
+
+  searx.plugins.hash_plugin.SXNGPlugin:
+    active: true
+
+  searx.plugins.unit_converter.SXNGPlugin:
+    active: true
+
+  searx.plugins.tracker_url_remover.SXNGPlugin:
+    active: true
+
+  searx.plugins.hostnames.SXNGPlugin:
+    active: true
+
+  searx.plugins.time_zone.SXNGPlugin:
+    active: true
+
+  searx.plugins.self_info.SXNGPlugin:
+    active: true
+
+  searx.plugins.ahmia_filter.SXNGPlugin:
+    active: true
+
+  searx.plugins.oa_doi_rewrite.SXNGPlugin:
+    active: false
+
+  searx.plugins.tor_check.SXNGPlugin:
+    active: false
