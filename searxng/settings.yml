@@ -5,37 +5,22 @@
 
 # --- Общие настройки ---
 general:
-  debug: false
+  debug: true                # включено для отладки (отключите в продакшене)
   instance_name: "${INSTANCE_NAME:-SearXNG}"
   privacypolicy_url: false
   donation_url: false
-  contact_url: ""           # отключено
-  enable_metrics: false     # телеметрия выключена
-  enable_telemetry: false
-
-# --- Брендинг и UI ---
-brand:
-  git_url: ""
-  git_branch: ""
-  issue_url: ""
-  new_issue_url: ""
-  docs_url: ""
-  public_instances: ""
-  wiki_url: ""
-  custom:
-    simple:
-      use_simple_style: true
+  contact_url: ""            # отключено
+  enable_metrics: false      # телеметрия выключена
 
 # --- Поиск ---
 search:
-  safe_search: 0            # 0=выкл, 1=умеренный, 2=строгий
+  safe_search: 0             # 0=выкл, 1=умеренный, 2=строгий
   autocomplete: "${AUTOCOMPLETE:-google}"
   default_lang: "auto"
-  max_page: 0               # 0 = без лимита
-
-  # Форматы вывода (html обязателен, остальные по желанию)
+  max_page: 0                # 0 = без лимита
   formats:
     - html
+    - json                   # включён JSON-формат для API-запросов
 
 # --- Сервер ---
 server:
@@ -72,27 +57,31 @@ engines:
     engine: duckduckgo
     shortcut: ddg
     disabled: false
+    timeout: 6.0
 
   - name: brave
     engine: brave
     shortcut: br
     disabled: false
+    timeout: 6.0
 
   - name: mojeek
     engine: mojeek
     shortcut: mjk
     disabled: false
+    timeout: 6.0
 
   - name: wikipedia
     engine: wikipedia
     shortcut: wp
     disabled: false
+    timeout: 3.0
 
-  # --- Google (через html-scraping, может сломаться) ---
   - name: google
     engine: google
     shortcut: g
     disabled: false
+    timeout: 6.0
 
   # --- Изображения ---
   - name: duckduckgo images
@@ -100,11 +89,13 @@ engines:
     categories: images
     shortcut: ddgi
     disabled: false
+    timeout: 6.0
 
   - name: unsplash
     engine: unsplash
     shortcut: us
     disabled: false
+    timeout: 6.0
 
   # --- Видео ---
   - name: duckduckgo videos
@@ -112,44 +103,52 @@ engines:
     categories: videos
     shortcut: ddgv
     disabled: false
+    timeout: 6.0
 
   - name: peerpipe
     engine: peerpipe
     shortcut: pp
     disabled: false
+    timeout: 10.0
 
   # --- IT ---
   - name: stackoverflow
     engine: stackoverflow
     shortcut: st
     disabled: false
+    timeout: 6.0
 
   - name: github
     engine: github
     shortcut: gh
     disabled: false
+    timeout: 6.0
 
   - name: arch linux wiki
     engine: archlinux
     shortcut: al
     disabled: false
+    timeout: 6.0
 
   # --- Наука ---
   - name: arxiv
     engine: arxiv
     shortcut: ar
     disabled: false
+    timeout: 10.0
 
   - name: crossref
     engine: crossref
     shortcut: cr
     disabled: false
+    timeout: 10.0
 
   # --- Карты ---
   - name: openstreetmap
     engine: openstreetmap
     shortcut: osm
     disabled: false
+    timeout: 6.0
 
   # --- Отключённые (шумные / с телеметрией) ---
   - name: bing
@@ -165,7 +164,6 @@ engines:
     disabled: true
 
 # --- Плагины ---
-# Отключаем всё ненужное, оставляем только полезное.
 plugins:
   - name: "Basic Calculator"
     disabled: false
@@ -182,11 +180,15 @@ plugins:
   - name: "Unit converter plugin"
     disabled: false
 
-# --- исходящие HTTP-запросы ---
+# --- Исходящие HTTP-запросы ---
 outgoing:
-  request_timeout: 5.0
+  request_timeout: 6.0       # увеличен с 5 до 6 секунд
   max_request_timeout: 15.0
-  # Пул соединений
   pool_connections: 100
   pool_maxsize: 20
   enable_http2: true
+
+# --- uWSGI логирование ---
+# В Docker-образе SearXNG использует uWSGI.
+# Логи видны через: docker compose logs -f
+# uWSGI пишет запросы и ошибки в stdout/stderr автоматически.
