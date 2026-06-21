@@ -34,7 +34,8 @@ services:
     container_name: searxng-mcp
     image: overtlids/mcp-searxng-enhanced:latest
     restart: always
-    command: ["python", "mcp_server.py", "--http"]
+    # Используем shell формат для гарантии передачи флага --http
+    command: sh -c "python mcp_server.py --http"
     ports:
       - "8000:8000"
     environment:
