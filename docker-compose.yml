@@ -1,5 +1,5 @@
-# Основано на официальном шаблоне SearXNG 2026
-# Документация: https://docs.searxng.org/admin/installation-docker.html
+# Основано на офіційному шаблоні SearXNG 2026
+# Документація: https://docs.searxng.org/admin/installation-docker.html
 
 name: searxng
 
@@ -29,37 +29,18 @@ services:
     volumes:
       - valkey-data:/data/
 
-  # MCP сервер для LLM клиентов (HTTP mode на порту 8000)
+  # MCP сервер для LLM клієнтів (SSE транспорт на порту 32769)
   mcp:
     container_name: searxng-mcp
-    image: overtlids/mcp-searxng-enhanced:latest
+    image: ghcr.io/the-ai-workshops/searxng-mcp-server:latest
     restart: always
-    # Используем entrypoint для переопределения CMD из Dockerfile
-    entrypoint: ["python", "mcp_server.py", "--http"]
     ports:
-      - "8000:8000"
+      - "32769:32769"
     environment:
-      - SEARXNG_ENGINE_API_BASE_URL=http://searxng-core:8080/search
-      - MCP_HTTP_HOST=0.0.0.0
-      - MCP_HTTP_PORT=8000
-      - DESIRED_TIMEZONE=Europe/Moscow
-      - RETURNED_SCRAPPED_PAGES_NO=3
-      - SCRAPPED_PAGES_NO=5
-      - PAGE_CONTENT_WORDS_LIMIT=5000
-      - CITATION_LINKS=True
-      - MAX_IMAGE_RESULTS=10
-      - MAX_VIDEO_RESULTS=10
-      - MAX_FILE_RESULTS=5
-      - MAX_MAP_RESULTS=5
-      - MAX_SOCIAL_RESULTS=5
-      - TRAFILATURA_TIMEOUT=15
-      - SCRAPING_TIMEOUT=20
-      - CACHE_MAXSIZE=100
-      - CACHE_TTL_MINUTES=5
-      - CACHE_MAX_AGE_MINUTES=30
-      - RATE_LIMIT_REQUESTS_PER_MINUTE=10
-      - RATE_LIMIT_TIMEOUT_SECONDS=60
-      - IGNORED_WEBSITES=
+      - SEARXNG_BASE_URL=http://searxng-core:8080
+      - HOST=0.0.0.0
+      - PORT=32769
+      - TRANSPORT=sse
     depends_on:
       - core
     logging:
