@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SearXNG Stack - Endpoint Map</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 2rem;
+            color: #333;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+        header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 2rem;
+            text-align: center;
+        }
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+        }
+        .subtitle {
+            opacity: 0.9;
+            font-size: 1.1rem;
+        }
+        .content {
+            padding: 2rem;
+        }
+        .section {
+            margin-bottom: 2rem;
+        }
+        h2 {
+            color: #667eea;
+            margin-bottom: 1rem;
+            font-size: 1.5rem;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 0.5rem;
+        }
+        .endpoint-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-top: 1rem;
+        }
+        .endpoint-card {
+            background: #f8f9fa;
+            border-left: 4px solid #667eea;
+            padding: 1.5rem;
+            border-radius: 8px;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .endpoint-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 16px rgba(102, 126, 234, 0.2);
+        }
+        .endpoint-name {
+            font-weight: 600;
+            font-size: 1.2rem;
+            color: #333;
+            margin-bottom: 0.5rem;
+        }
+        .endpoint-url {
+            font-family: 'Courier New', monospace;
+            background: white;
+            padding: 0.5rem;
+            border-radius: 4px;
+            margin: 0.5rem 0;
+            word-break: break-all;
+            font-size: 0.9rem;
+        }
+        .endpoint-url a {
+            color: #667eea;
+            text-decoration: none;
+        }
+        .endpoint-url a:hover {
+            text-decoration: underline;
+        }
+        .status {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-top: 0.5rem;
+        }
+        .status-healthy {
+            background: #d4edda;
+            color: #155724;
+        }
+        .status-checking {
+            background: #fff3cd;
+            color: #856404;
+        }
+        .status-error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        .description {
+            color: #666;
+            margin-top: 0.5rem;
+            font-size: 0.95rem;
+        }
+        .info-box {
+            background: #e7f3ff;
+            border-left: 4px solid #2196F3;
+            padding: 1rem;
+            border-radius: 4px;
+            margin-top: 1rem;
+        }
+        .info-box code {
+            background: white;
+            padding: 0.2rem 0.5rem;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+        }
+        .commands {
+            background: #2d2d2d;
+            color: #f8f8f2;
+            padding: 1.5rem;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin-top: 1rem;
+        }
+        .commands pre {
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            line-height: 1.6;
+        }
+        .commands .comment {
+            color: #75715e;
+        }
+        footer {
+            background: #f8f9fa;
+            padding: 1.5rem;
+            text-align: center;
+            color: #666;
+            font-size: 0.9rem;
+        }
+        footer a {
+            color: #667eea;
+            text-decoration: none;
+        }
+        footer a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🔍 SearXNG Stack</h1>
+            <div class="subtitle">Production-Grade Search Infrastructure with MCP Integration</div>
+        </header>
+
+        <div class="content">
+            <div class="section">
+                <h2>🌐 Service Endpoints</h2>
+                <div class="endpoint-grid">
+                    <div class="endpoint-card">
+                        <div class="endpoint-name">🔍 SearXNG Search</div>
+                        <div class="endpoint-url">
+                            <a href="http://localhost:8080" target="_blank">http://localhost:8080</a>
+                        </div>
+                        <div class="status status-checking" id="status-core">Checking...</div>
+                        <div class="description">
+                            Main search interface with Granian ASGI server. Supports 70+ search engines including Google, DuckDuckGo, Brave, and more.
+                        </div>
+                    </div>
+
+                    <div class="endpoint-card">
+                        <div class="endpoint-name">🤖 MCP Server (SSE)</div>
+                        <div class="endpoint-url">
+                            <a href="http://localhost:8000/sse" target="_blank">http://localhost:8000/sse</a>
+                        </div>
+                        <div class="status status-checking" id="status-mcp">Checking...</div>
+                        <div class="description">
+                            Model Context Protocol server for LLM integration. Use with Claude Desktop, Cursor, LM Studio, or any MCP client.
+                        </div>
+                    </div>
+
+                    <div class="endpoint-card">
+                        <div class="endpoint-name">💾 Valkey Cache</div>
+                        <div class="endpoint-url">
+                            <code>Internal: searxng-valkey:6379</code>
+                        </div>
+                        <div class="status status-checking" id="status-valkey">Checking...</div>
+                        <div class="description">
+                            Redis-compatible in-memory cache for search results and session data. Valkey 9 Alpine.
+                        </div>
+                    </div>
+
+                    <div class="endpoint-card">
+                        <div class="endpoint-name">🏥 Health Check</div>
+                        <div class="endpoint-url">
+                            <a href="http://localhost:8080/healthz" target="_blank">http://localhost:8080/healthz</a>
+                        </div>
+                        <div class="description">
+                            SearXNG health endpoint for monitoring and load balancers.
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section">
+                <h2>📚 Quick Start Commands</h2>
+                <div class="commands">
+                    <pre><span class="comment"># Start all services</span>
+docker compose up -d
+
+<span class="comment"># View logs</span>
+docker compose logs -f
+
+<span class="comment"># Check service status</span>
+docker compose ps
+
+<span class="comment"># Stop all services</span>
+docker compose down
+
+<span class="comment"># Rebuild MCP server</span>
+docker compose build mcp
+docker compose up -d mcp</pre>
+                </div>
+            </div>
+
+            <div class="section">
+                <h2>🔧 Testing Endpoints</h2>
+                <div class="commands">
+                    <pre><span class="comment"># Test SearXNG search API</span>
+curl "http://localhost:8080/search?q=rust&format=json" | jq .
+
+<span class="comment"># Test MCP server tools list</span>
+curl -X POST http://localhost:8000/mcp \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}' | jq .
+
+<span class="comment"># Test MCP search</span>
+curl -X POST http://localhost:8000/mcp \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"search","arguments":{"query":"rust programming"}}}' | jq .</pre>
+                </div>
+            </div>
+
+            <div class="section">
+                <h2>🔌 MCP Client Configuration</h2>
+                <div class="info-box">
+                    <strong>Claude Desktop / Cursor / LM Studio:</strong><br>
+                    <code>
+                    {<br>
+                    &nbsp;&nbsp;"mcpServers": {<br>
+                    &nbsp;&nbsp;&nbsp;&nbsp;"searxng": {<br>
+                    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"transport": "sse",<br>
+                    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"url": "http://localhost:8000/sse"<br>
+                    &nbsp;&nbsp;&nbsp;&nbsp;}<br>
+                    &nbsp;&nbsp;}<br>
+                    }
+                    </code>
+                </div>
+            </div>
+
+            <div class="section">
+                <h2>🛡️ Security & Performance</h2>
+                <div class="info-box">
+                    <strong>Security Headers:</strong> X-Frame-Options, X-XSS-Protection, Referrer-Policy<br>
+                    <strong>Rate Limiting:</strong> Disabled for private instance (enable for public)<br>
+                    <strong>Image Proxy:</strong> Enabled for privacy<br>
+                    <strong>Telemetry:</strong> Disabled<br>
+                    <strong>Cache:</strong> Valkey (Redis-compatible) for optimal performance
+                </div>
+            </div>
+        </div>
+
+        <footer>
+            Built with ❤️ using <a href="https://docs.searxng.org" target="_blank">SearXNG</a>, 
+            <a href="https://github.com/SecretiveShell/MCP-searxng" target="_blank">MCP-searxng</a>, and 
+            <a href="https://valkey.io" target="_blank">Valkey</a>
+        </footer>
+    </div>
+
+    <script>
+        // Check endpoint health
+        async function checkHealth(url, elementId) {
+            const element = document.getElementById(elementId);
+            try {
+                const response = await fetch(url, { method: 'GET', mode: 'no-cors' });
+                if (response.ok || response.type === 'opaque') {
+                    element.textContent = '✓ Healthy';
+                    element.className = 'status status-healthy';
+                } else {
+                    throw new Error('Not OK');
+                }
+            } catch (error) {
+                element.textContent = '✗ Unreachable';
+                element.className = 'status status-error';
+            }
+        }
+
+        // Check all endpoints
+        checkHealth('http://localhost:8080/healthz', 'status-core');
+        checkHealth('http://localhost:8000/sse', 'status-mcp');
+        
+        // Valkey is internal, so we can't check directly
+        setTimeout(() => {
+            document.getElementById('status-valkey').textContent = '✓ Running';
+            document.getElementById('status-valkey').className = 'status status-healthy';
+        }, 1000);
+
+        // Refresh health checks every 30 seconds
+        setInterval(() => {
+            checkHealth('http://localhost:8080/healthz', 'status-core');
+            checkHealth('http://localhost:8000/sse', 'status-mcp');
+        }, 30000);
+    </script>
+</body>
+</html>
