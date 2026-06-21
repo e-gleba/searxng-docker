@@ -20,16 +20,71 @@ docker compose up -d
 
 **Никаких `.env` файлов не нужно.**
 
-### Тестирование
+---
+
+## 🧪 Тестирование сервисов
+
+### Проверка статуса контейнеров
 
 ```bash
-# Проверить SearXNG
-curl http://localhost:8080/search?q=rust&format=json | head -c 500
+docker compose ps
+```
 
-# Проверить MCP сервер
+Должны быть `Up`:
+- `searxng-core` (порт 8080)
+- `searxng-valkey`
+- `searxng-mcp` (порт 8000)
+
+### Тест SearXNG (порт 8080)
+
+```bash
+# Простой поиск
+curl "http://localhost:8080/search?q=rust&format=json" | jq '.results[0]'
+
+# Поиск с категориями
+curl "http://localhost:8080/search?q=python&categories=it&format=json" | jq '.results[0]'
+
+# Проверка что SearXNG отвечает
+curl -I http://localhost:8080
+```
+
+### Тест MCP сервера (порт 8000)
+
+```bash
+# 1. Получить список доступных инструментов
 curl -X POST http://localhost:8000/mcp \
   -H "Content-Type: application/json" \
-  -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}'
+  -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}' | jq .
+
+# 2. Поиск через MCP
+curl -X POST http://localhost:8000/mcp \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"search_web","arguments":{"query":"rust programming"}}}' | jq .
+
+# 3. Скрейпинг сайта
+curl -X POST http://localhost:8000/mcp \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"get_website","arguments":{"url":"https://example.com"}}}' | jq .
+
+# 4. Получить текущую дату/время
+curl -X POST http://localhost:8000/mcp \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","id":4,"method":"tools/call","params":{"name":"get_current_datetime","arguments":{}}}' | jq .
+```
+
+### Просмотр логов
+
+```bash
+# Логи всех контейнеров
+docker compose logs -f
+
+# Логи конкретного контейнера
+docker compose logs -f core  # SearXNG
+docker compose logs -f mcp   # MCP сервер
+docker compose logs -f valkey  # Valkey кэш
+
+# Последние 50 строк
+docker compose logs --tail=50 core
 ```
 
 ---
@@ -45,30 +100,6 @@ MCP (Model Context Protocol) сервер позволяет **локальны�
 | `search_web(query, category?)` | Веб-поиск (general, images, videos, files, map, social) |
 | `get_website(url)` | Скрейпинг содержимого страницы |
 | `get_current_datetime()` | Текущие дата/время |
-
-### Тестирование MCP через curl
-
-```bash
-# Проверить что MCP сервер запущен
-curl http://localhost:8000/mcp -X POST \
-  -H "Content-Type: application/json" \
-  -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}' | jq .
-
-# Поиск через MCP
-curl http://localhost:8000/mcp -X POST \
-  -H "Content-Type: application/json" \
-  -d '{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"search_web","arguments":{"query":"rust programming"}}}' | jq .
-
-# Скрейпинг сайта
-curl http://localhost:8000/mcp -X POST \
-  -H "Content-Type: application/json" \
-  -d '{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"get_website","arguments":{"url":"https://example.com"}}}' | jq .
-
-# Получить текущую дату/время
-curl http://localhost:8000/mcp -X POST \
-  -H "Content-Type: application/json" \
-  -d '{"jsonrpc":"2.0","id":4,"method":"tools/call","params":{"name":"get_current_datetime","arguments":{}}}' | jq .
-```
 
 ### Подключение к LLM клиентам
 
