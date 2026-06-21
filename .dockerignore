@@ -1,42 +1,83 @@
+# =============================================================================
+# Docker Ignore Rules — SearXNG Docker
+# =============================================================================
+# Files excluded from Docker build context to reduce image size and build time
+# =============================================================================
+
 # Git
 .git
 .gitignore
+.gitattributes
 
 # Docker
 docker-compose.yml
-Dockerfile
+docker-compose.override.yml
 .dockerignore
 
-# Documentation
+# Documentation (not needed in image)
 README.md
+CHANGELOG.md
+CONTRIBUTING.md
+SECURITY.md
+LICENSE
 *.md
 docs/
 
-# IDE
+# IDE and editor files
 .vscode/
 .idea/
 *.swp
+*.swo
+*~
 
-# OS
+# OS files
 .DS_Store
 Thumbs.db
 
-# Environment
+# Environment files
 .env
 .env.local
+.env.*.local
 
-# Data volumes
+# Data volumes (runtime data)
 data/
 core-data/
 valkey-data/
+logs/
 
-# Python
+# Python artifacts
 __pycache__/
 *.py[cod]
+*$py.class
 venv/
 env/
+ENV/
+.venv
+*.egg-info/
 
-# Temporary
-*.log
+# Build artifacts
+build/
+dist/
+*.egg
+
+# Test files
+tests/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# CI/CD configuration
+.github/
+.travis.yml
+.circleci/
+
+# Terraform (if present)
+.terraform/
+*.tfstate*
+
+# Temporary files
+tmp/
+temp/
 *.tmp
 *.bak
+*.log
