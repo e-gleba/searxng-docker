@@ -1,6 +1,6 @@
 # 🔍 SearXNG Docker
 
-> Приватный мета-поисковик **SearXNG** — готовый к запуску в Docker.  
+> Приватный мета-поисковик **SearXNG** — оптимизирован для скорости и эффективности.  
 > Основано на [официальной архитектуре 2026](https://docs.searxng.org/admin/installation-docker.html) с **Granian** + **Valkey**.
 
 ---
@@ -29,8 +29,34 @@ docker compose up -d
 - ✅ **Granian** (Rust ASGI-сервер) вместо устаревшего uWSGI
 - ✅ **Valkey 9** (Redis fork) для кэширования
 - ✅ `settings.yml` с `use_default_settings: true` — загружает все официальные дефолты
+- ✅ **Оптимизировано для скорости** — уменьшены таймауты, отключены медленные движки
+- ✅ **Custom dev-движки** — cppreference, devdocs.io
 - ✅ Русская локаль из коробки
 - ✅ **Одна команда для запуска** — никаких лишних файлов
+
+---
+
+## ⚡ Оптимизации
+
+### Удалено (bloat)
+- ❌ Bing (web, images, news, videos)
+- ❌ Yahoo
+- ❌ Qwant
+- ❌ Mojeek (медленный)
+- ❌ HackerNews (часто таймаутит)
+
+### Оптимизировано
+- ⚡ `request_timeout`: 6.0s → **4.0s** (быстрее отклик)
+- ⚡ `max_request_timeout`: 15.0s → **10.0s**
+- ⚡ Уменьшены таймауты для arXiv, PubMed, CrossRef
+
+### Добавлено (custom)
+- 🛠️ **cppreference** — C++ документация (`!cpp`)
+- 🛠️ **cppreference ru** — русская версия (`!cppru`)
+- 🛠️ **devdocs** — унифицированная документация (`!dd`)
+
+### Включено
+- ✅ Yandex, Yandex Images (были отключены по умолчанию)
 
 ---
 
@@ -338,23 +364,25 @@ server:
 - ✅ OpenStreetMap
 - ✅ YouTube, Vimeo, Dailymotion
 - ✅ Startpage
-- ✅ и многие другие
+- ✅ Yandex, Yandex Images (включены вручную)
+- ✅ **cppreference** (`!cpp`) — custom
+- ✅ **cppreference ru** (`!cppru`) — custom
+- ✅ **devdocs** (`!dd`) — custom
 
-Движки, отключённые по умолчанию, включаются в `core-config/settings.yml`:
+Движки, отключённые вручную (bloat):
+- ❌ Bing (все виды)
+- ❌ Yahoo
+- ❌ Qwant
+- ❌ Mojeek
+- ❌ HackerNews
+
+### Включение движка
 
 ```yaml
 engines:
-  - name: yandex
-    disabled: false
-
-  - name: yandex images
-    disabled: false
-
   - name: bing
     disabled: false
 ```
-
-Полный список движков: [официальная документация](https://docs.searxng.org/user/configured_engines.html).
 
 ### Отключение движка
 
@@ -395,13 +423,14 @@ searxng-docker/
 
 ---
 
-## 🛡️ Безопасность
+## 🛡️ Безопасность и производительность
 
 - HTTP-заголовки безопасности (X-Frame-Options, X-XSS-Protection, Referrer-Policy)
 - `limiter: false` — подходит для приватного инстанса (не для публичного!)
 - `image_proxy: true` — проксирование картинок через SearXNG для приватности
-- Телеметрия и метрики **отключены**
+- **Телеметрия отключена** (`enable_metrics: false`)
 - **Valkey** для кэширования (быстрее и безопаснее Redis)
+- **Оптимизированные таймауты** — быстрее отклик
 
 > Для **публичного** инстанса включите `server.limiter: true` и настройте reverse proxy (nginx/caddy).
 
