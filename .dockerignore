@@ -1,0 +1,42 @@
+# Git
+.git
+.gitignore
+
+# Docker
+docker-compose.yml
+Dockerfile
+.dockerignore
+
+# Documentation
+README.md
+*.md
+docs/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment
+.env
+.env.local
+
+# Data volumes
+data/
+core-data/
+valkey-data/
+
+# Python
+__pycache__/
+*.py[cod]
+venv/
+env/
+
+# Temporary
+*.log
+*.tmp
+*.bak
