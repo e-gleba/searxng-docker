@@ -409,6 +409,66 @@ docker compose up -d
 
 ---
 
+## 🔄 Обновление репозитория (git pull)
+
+### Правильное обновление
+
+```bash
+# 1. Остановить контейнеры
+docker compose down
+
+# 2. Обновить репозиторий
+git pull
+
+# 3. Пересоздать контейнеры с новыми настройками
+docker compose up -d
+```
+
+### Если git pull выдает "permission denied"
+
+**Причина:** Docker создал файлы от имени root в volumes.
+
+**Решение:**
+
+```bash
+# Остановить контейнеры
+docker compose down
+
+# Удалить volumes (ВНИМАНИЕ: удалит кэш и данные!)
+docker compose down -v
+
+# Исправить права доступа
+sudo chown -R $USER:$USER .
+
+# Обновить репозиторий
+git pull
+
+# Пересоздать контейнеры
+docker compose up -d
+```
+
+### Альтернатива: сохранить данные
+
+```bash
+# Остановить контейнеры
+docker compose down
+
+# Временно переместить volumes
+mv core-config core-config.backup
+
+# Обновить репозиторий
+git pull
+
+# Вернуть ваши настройки (если меняли settings.yml)
+# cp core-config.backup/settings.yml core-config/settings.yml
+rm -rf core-config.backup
+
+# Пересоздать контейнеры
+docker compose up -d
+```
+
+---
+
 ## 🔥 Не открывается на 8080? Решение
 
 ### 1. Проверьте, что все контейнеры запущены
@@ -656,8 +716,9 @@ searxng-docker/
 ├── core-config/
 │   └── settings.yml            # ВСЕ настройки SearXNG (единственный конфиг)
 ├── .env.example                # Пример необязательных переменных
-├── README.md
-└── .gitignore
+├── .gitignore                  # Git ignore правила
+├── .dockerignore               # Docker build context ignore
+└── README.md                   # Эта документация
 ```
 
 **Named volumes** (создаются автоматически):
