@@ -20,6 +20,18 @@ docker compose up -d
 
 **Никаких `.env` файлов не нужно.**
 
+### Тестирование
+
+```bash
+# Проверить SearXNG
+curl http://localhost:8080/search?q=rust&format=json | head -c 500
+
+# Проверить MCP сервер
+curl -X POST http://localhost:8000/mcp \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}'
+```
+
 ---
 
 ## 🤖 MCP сервер (для LLM)
@@ -33,6 +45,30 @@ MCP (Model Context Protocol) сервер позволяет **локальны�
 | `search_web(query, category?)` | Веб-поиск (general, images, videos, files, map, social) |
 | `get_website(url)` | Скрейпинг содержимого страницы |
 | `get_current_datetime()` | Текущие дата/время |
+
+### Тестирование MCP через curl
+
+```bash
+# Проверить что MCP сервер запущен
+curl http://localhost:8000/mcp -X POST \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}' | jq .
+
+# Поиск через MCP
+curl http://localhost:8000/mcp -X POST \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"search_web","arguments":{"query":"rust programming"}}}' | jq .
+
+# Скрейпинг сайта
+curl http://localhost:8000/mcp -X POST \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"get_website","arguments":{"url":"https://example.com"}}}' | jq .
+
+# Получить текущую дату/время
+curl http://localhost:8000/mcp -X POST \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","id":4,"method":"tools/call","params":{"name":"get_current_datetime","arguments":{}}}' | jq .
+```
 
 ### Подключение к LLM клиентам
 
@@ -207,6 +243,7 @@ ui:
 - ❌ Qwant
 - ❌ Mojeek (медленный)
 - ❌ HackerNews (часто таймаутит)
+- ❌ ahmia, torch (Tor-only движки)
 
 ### Оптимизировано
 - ⚡ `request_timeout`: 6.0s → **4.0s** (быстрее отклик)
@@ -560,6 +597,7 @@ ui:
 - ❌ Qwant
 - ❌ Mojeek
 - ❌ HackerNews
+- ❌ ahmia, torch (Tor-only)
 
 ### Включение движка
 
