@@ -1,0 +1,22 @@
+# Переменные окружения
+.env
+
+# Данные SearXNG (runtime)
+data/
+
+# Docker
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Секреты
+searxng/searxng.key

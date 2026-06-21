@@ -1,0 +1,192 @@
+# ============================================
+# Конфигурация SearXNG — безопасные дефолты
+# Документация: https://docs.searxng.org/admin/settings/
+# ============================================
+
+# --- Общие настройки ---
+general:
+  debug: false
+  instance_name: "${INSTANCE_NAME:-SearXNG}"
+  privacypolicy_url: false
+  donation_url: false
+  contact_url: ""           # отключено
+  enable_metrics: false     # телеметрия выключена
+  enable_telemetry: false
+
+# --- Брендинг и UI ---
+brand:
+  git_url: ""
+  git_branch: ""
+  issue_url: ""
+  new_issue_url: ""
+  docs_url: ""
+  public_instances: ""
+  wiki_url: ""
+  custom:
+    simple:
+      use_simple_style: true
+
+# --- Поиск ---
+search:
+  safe_search: 0            # 0=выкл, 1=умеренный, 2=строгий
+  autocomplete: "${AUTOCOMPLETE:-google}"
+  default_lang: "auto"
+  max_page: 0               # 0 = без лимита
+
+  # Форматы вывода (html обязателен, остальные по желанию)
+  formats:
+    - html
+
+# --- Сервер ---
+server:
+  port: 8080
+  bind_address: "0.0.0.0"
+  base_url: "${BASE_URL:-http://localhost:8080/}"
+  limiter: false             # отключено для приватного инстанса
+  public_instance: false
+  secret_key: "changeme"     # ОБЯЗАТЕЛЬНО смените на случайную строку!
+  method: "POST"
+  image_proxy: true          # проксирование картинок через SearXNG
+  default_http_headers:
+    X-Content-Type-Options: nosniff
+    X-Frame-Options: SAMEORIGIN
+    X-XSS-Protection: "1; mode=block"
+    Referrer-Policy: no-referrer
+
+# --- UI-настройки ---
+ui:
+  static_use_hash: true
+  default_theme: simple
+  default_locale: "ru"
+  theme_args:
+    simple_style: auto       # auto = следует системной теме
+  results_on_new_tab: false
+  infinite_scroll: true
+  query_in_title: true
+
+# --- Движки (engines) ---
+# Включены только проверенные, приватные, без лишней телеметрии.
+engines:
+  # --- Веб-поиск ---
+  - name: duckduckgo
+    engine: duckduckgo
+    shortcut: ddg
+    disabled: false
+
+  - name: brave
+    engine: brave
+    shortcut: br
+    disabled: false
+
+  - name: mojeek
+    engine: mojeek
+    shortcut: mjk
+    disabled: false
+
+  - name: wikipedia
+    engine: wikipedia
+    shortcut: wp
+    disabled: false
+
+  # --- Google (через html-scraping, может сломаться) ---
+  - name: google
+    engine: google
+    shortcut: g
+    disabled: false
+
+  # --- Изображения ---
+  - name: duckduckgo images
+    engine: duckduckgo_extra
+    categories: images
+    shortcut: ddgi
+    disabled: false
+
+  - name: unsplash
+    engine: unsplash
+    shortcut: us
+    disabled: false
+
+  # --- Видео ---
+  - name: duckduckgo videos
+    engine: duckduckgo_extra
+    categories: videos
+    shortcut: ddgv
+    disabled: false
+
+  - name: peerpipe
+    engine: peerpipe
+    shortcut: pp
+    disabled: false
+
+  # --- IT ---
+  - name: stackoverflow
+    engine: stackoverflow
+    shortcut: st
+    disabled: false
+
+  - name: github
+    engine: github
+    shortcut: gh
+    disabled: false
+
+  - name: arch linux wiki
+    engine: archlinux
+    shortcut: al
+    disabled: false
+
+  # --- Наука ---
+  - name: arxiv
+    engine: arxiv
+    shortcut: ar
+    disabled: false
+
+  - name: crossref
+    engine: crossref
+    shortcut: cr
+    disabled: false
+
+  # --- Карты ---
+  - name: openstreetmap
+    engine: openstreetmap
+    shortcut: osm
+    disabled: false
+
+  # --- Отключённые (шумные / с телеметрией) ---
+  - name: bing
+    engine: bing
+    disabled: true
+
+  - name: yahoo
+    engine: yahoo
+    disabled: true
+
+  - name: qwant
+    engine: qwant
+    disabled: true
+
+# --- Плагины ---
+# Отключаем всё ненужное, оставляем только полезное.
+plugins:
+  - name: "Basic Calculator"
+    disabled: false
+  - name: "Hash plugin"
+    disabled: false
+  - name: "Hostnames plugin"
+    disabled: false
+  - name: "Infinite scroll"
+    disabled: false
+  - name: "Tracker URL remover"
+    disabled: false
+  - name: "Open Access DOI rewrite"
+    disabled: false
+  - name: "Unit converter plugin"
+    disabled: false
+
+# --- исходящие HTTP-запросы ---
+outgoing:
+  request_timeout: 5.0
+  max_request_timeout: 15.0
+  # Пул соединений
+  pool_connections: 100
+  pool_maxsize: 20
+  enable_http2: true
