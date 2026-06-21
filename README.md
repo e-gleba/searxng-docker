@@ -1,6 +1,6 @@
 # 🔍 SearXNG Docker
 
-> Приватный мета-поисковик **SearXNG** — готовый к запуску в Docker.
+> Приватный мета-поисковик **SearXNG** — готовый к запуску в Docker.  
 > Основано на [официальной архитектуре 2026](https://docs.searxng.org/admin/installation-docker.html) с **Granian** + **Valkey**.
 
 ---
@@ -28,8 +28,7 @@ docker compose up -d
 - ✅ `docker-compose.yml` на базе официального шаблона 2026
 - ✅ **Granian** (Rust ASGI-сервер) вместо устаревшего uWSGI
 - ✅ **Valkey 9** (Redis fork) для кэширования
-- ✅ Преднастроенный `settings.yml` с безопасными дефолтами
-- ✅ Отключённая телеметрия и лишние плагины
+- ✅ `settings.yml` с `use_default_settings: true` — загружает все официальные дефолты
 - ✅ Русская локаль из коробки
 - ✅ **Одна команда для запуска** — никаких лишних файлов
 
@@ -283,7 +282,7 @@ docker compose pull && docker compose up -d
 
 **Все настройки SearXNG хранятся в `core-config/settings.yml`.**
 
-Это единственный файл конфигурации. Порт, URL, движки, плагины — всё здесь.
+Файл использует `use_default_settings: true` — это загружает все официальные дефолты из [официального settings.yml](https://github.com/searxng/searxng/blob/master/searx/settings.yml), а мы переопределяем только нужное.
 
 После изменений перезапустите:
 
@@ -326,20 +325,44 @@ server:
 
 ---
 
-## 🔧 Добавление собственных движков (engines)
+## 🔧 Управление движками (engines)
 
-Откройте `core-config/settings.yml` → секция `engines`.
+С `use_default_settings: true` **все официальные движки уже доступны**. Популярные включены по умолчанию:
 
-Пример — добавить Yandex:
+- ✅ Google, Google Images, Google News, Google Videos, Google Scholar
+- ✅ DuckDuckGo
+- ✅ Brave (+ Images, Videos, News)
+- ✅ Wikipedia, Wikidata
+- ✅ GitHub, Stack Overflow, GitLab
+- ✅ arXiv, PubMed
+- ✅ OpenStreetMap
+- ✅ YouTube, Vimeo, Dailymotion
+- ✅ Startpage
+- ✅ и многие другие
+
+Движки, отключённые по умолчанию, включаются в `core-config/settings.yml`:
 
 ```yaml
+engines:
   - name: yandex
-    engine: yandex
-    shortcut: yd
+    disabled: false
+
+  - name: yandex images
+    disabled: false
+
+  - name: bing
     disabled: false
 ```
 
-Полный список движков: [документация SearXNG](https://docs.searxng.org/user/configured_engines.html).
+Полный список движков: [официальная документация](https://docs.searxng.org/user/configured_engines.html).
+
+### Отключение движка
+
+```yaml
+engines:
+  - name: google
+    disabled: true
+```
 
 ### Добавление тем
 
