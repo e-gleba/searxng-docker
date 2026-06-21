@@ -29,13 +29,14 @@ services:
     volumes:
       - valkey-data:/data/
 
-  # MCP сервер для подключения к LLM клиентам (Ollama, LM Studio, Claude Desktop, Cursor)
+  # MCP сервер для LLM клиентов (HTTP mode на порту 8000)
   mcp:
     container_name: searxng-mcp
     image: overtlids/mcp-searxng-enhanced:latest
     restart: always
+    command: ["python", "mcp_server.py", "--http"]
     ports:
-      - "8000:8000"  # HTTP MCP endpoint
+      - "8000:8000"
     environment:
       - SEARXNG_ENGINE_API_BASE_URL=http://searxng-core:8080/search
       - MCP_HTTP_HOST=0.0.0.0
