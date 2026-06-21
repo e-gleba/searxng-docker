@@ -16,7 +16,7 @@ docker compose up -d
 **Готово!**
 
 - 🔍 **SearXNG**: http://localhost:8080 — веб-интерфейс поиска
-- 🤖 **MCP сервер**: http://localhost:8000/mcp — для LLM клиентов (Ollama, LM Studio, Claude Desktop, Cursor)
+- 🤖 **MCP сервер**: http://localhost:32769/sse — для LLM клиентов (Ollama, LM Studio, Claude Desktop, Cursor)
 
 **Никаких `.env` файлов не нужно.**
 
@@ -33,7 +33,7 @@ docker compose ps
 Должны быть `Up`:
 - `searxng-core` (порт 8080)
 - `searxng-valkey`
-- `searxng-mcp` (порт 8000)
+- `searxng-mcp` (порт 32769)
 
 ### Тест SearXNG (порт 8080)
 
@@ -48,29 +48,20 @@ curl "http://localhost:8080/search?q=python&categories=it&format=json" | jq '.re
 curl -I http://localhost:8080
 ```
 
-### Тест MCP сервера (порт 8000)
+### Тест MCP сервера (SSE транспорт)
 
 ```bash
-# 1. Получить список доступных инструментов
-curl -X POST http://localhost:8000/mcp \
-  -H "Content-Type: application/json" \
-  -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}' | jq .
+# Проверить что SSE endpoint доступен
+curl -I http://localhost:32769/sse
 
-# 2. Поиск через MCP
-curl -X POST http://localhost:8000/mcp \
-  -H "Content-Type: application/json" \
-  -d '{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"search_web","arguments":{"query":"rust programming"}}}' | jq .
-
-# 3. Скрейпинг сайта
-curl -X POST http://localhost:8000/mcp \
-  -H "Content-Type: application/json" \
-  -d '{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"get_website","arguments":{"url":"https://example.com"}}}' | jq .
-
-# 4. Получить текущую дату/время
-curl -X POST http://localhost:8000/mcp \
-  -H "Content-Type: application/json" \
-  -d '{"jsonrpc":"2.0","id":4,"method":"tools/call","params":{"name":"get_current_datetime","arguments":{}}}' | jq .
+# Подключиться к SSE потоку (будет открыто соединение)
+curl -N http://localhost:32769/sse
 ```
+
+**Важно:** SSE (Server-Sent Events) работает иначе чем REST API:
+1. Клиент открывает GET соединение на `/sse`
+2. Сервер отправляет события в потоке
+3. Для вызова инструментов клиент делает POST на отдельный endpoint
 
 ### Просмотр логов
 
@@ -93,13 +84,24 @@ docker compose logs --tail=50 core
 
 MCP (Model Context Protocol) сервер позволяет **локальным LLM моделям** искать в интернете через ваш SearXNG.
 
+**Используется:** [The-AI-Workshops/searxng-mcp-server](https://github.com/The-AI-Workshops/searxng-mcp-server) с **SSE транспортом** — стабильнее чем HTTP, работает со всеми MCP клиентами.
+
 ### Доступные tools
 
 | Tool | Описание |
 |------|----------|
-| `search_web(query, category?)` | Веб-поиск (general, images, videos, files, map, social) |
-| `get_website(url)` | Скрейпинг содержимого страницы |
-| `get_current_datetime()` | Текущие дата/время |
+| `search(q, categories?, engines?, language?)` | Веб-поиск через SearXNG |
+
+### Параметры поиска
+
+| Параметр | Описание | Пример |
+|----------|----------|--------|
+| `q` | Поисковый запрос (обязательный) | `"rust programming"` |
+| `categories` | Категории через запятую | `"general,images"` |
+| `engines` | Движки через запятую | `"google,duckduckgo"` |
+| `language` | Код языка | `"ru"`, `"en"` |
+| `time_range` | Временной диапазон | `"day"`, `"month"`, `"year"` |
+| `safesearch` | Безопасный поиск | `0`, `1`, `2` |
 
 ### Подключение к LLM клиентам
 
@@ -111,7 +113,8 @@ MCP (Model Context Protocol) сервер позволяет **локальны�
 {
   "mcpServers": {
     "searxng": {
-      "url": "http://localhost:8000/mcp"
+      "transport": "sse",
+      "url": "http://localhost:32769/sse"
     }
   }
 }
@@ -125,7 +128,7 @@ Settings → MCP → Add MCP Server:
 
 ```
 Type: SSE
-URL: http://localhost:8000/mcp
+URL: http://localhost:32769/sse
 ```
 
 Или в `.cursor/mcp.json`:
@@ -134,7 +137,8 @@ URL: http://localhost:8000/mcp
 {
   "mcpServers": {
     "searxng": {
-      "url": "http://localhost:8000/mcp"
+      "transport": "sse",
+      "url": "http://localhost:32769/sse"
     }
   }
 }
@@ -145,7 +149,8 @@ URL: http://localhost:8000/mcp
 Настройки → MCP Servers → Add:
 
 ```
-URL: http://localhost:8000/mcp
+Transport: SSE
+URL: http://localhost:32769/sse
 ```
 
 #### Ollama + Open WebUI
@@ -155,7 +160,8 @@ URL: http://localhost:8000/mcp
 Settings → Tools → Add MCP Server:
 
 ```
-http://localhost:8000/mcp
+Transport: SSE
+URL: http://localhost:32769/sse
 ```
 
 #### Continue (VS Code extension)
@@ -167,7 +173,8 @@ http://localhost:8000/mcp
   "mcpServers": [
     {
       "name": "searxng",
-      "url": "http://localhost:8000/mcp"
+      "transport": "sse",
+      "url": "http://localhost:32769/sse"
     }
   ]
 }
@@ -179,8 +186,7 @@ http://localhost:8000/mcp
 
 ```
 Пользователь: Найди последние новости о Rust 2026
-LLM: [использует search_web] → возвращает результаты из Google, DuckDuckGo, Brave
-LLM: [использует get_website] → читает содержимое страницы
+LLM: [использует search] → возвращает результаты из Google, DuckDuckGo, Brave
 LLM: Вот что я нашел...
 ```
 
@@ -190,12 +196,10 @@ LLM: Вот что я нашел...
 
 ```yaml
 environment:
-  - SEARXNG_ENGINE_API_BASE_URL=http://searxng-core:8080/search  # URL SearXNG
-  - MCP_HTTP_PORT=8000                                           # Порт MCP
-  - DESIRED_TIMEZONE=Europe/Moscow                               # Часовой пояс
-  - MAX_IMAGE_RESULTS=10                                         # Макс картинок
-  - PAGE_CONTENT_WORDS_LIMIT=5000                                # Макс слов на страницу
-  - RATE_LIMIT_REQUESTS_PER_MINUTE=10                            # Rate limiting
+  - SEARXNG_BASE_URL=http://searxng-core:8080  # URL SearXNG
+  - HOST=0.0.0.0                                # Listen address
+  - PORT=32769                                  # Порт MCP
+  - TRANSPORT=sse                               # SSE транспорт
 ```
 
 Перезапуск после изменений:
@@ -402,10 +406,10 @@ docker compose up -d
 Запускаются **3 контейнера**:
 - `searxng-core` — поисковик (Granian ASGI) на порту **8080**
 - `searxng-valkey` — кэш Valkey 9 (Redis fork)
-- `searxng-mcp` — MCP сервер для LLM на порту **8000**
+- `searxng-mcp` — MCP сервер для LLM на порту **32769** (SSE)
 
 **SearXNG**: http://localhost:8080  
-**MCP endpoint**: http://localhost:8000/mcp
+**MCP endpoint**: http://localhost:32769/sse
 
 ---
 
@@ -590,7 +594,7 @@ docker compose logs -f mcp
 
 ```
 searxng-core  | [INFO] granian::http: 172.18.0.1 - "POST /search HTTP/1.1" 200 15234 (1823ms)
-searxng-mcp   | INFO:     172.18.0.1:54321 - "POST /mcp HTTP/1.1" 200 OK
+searxng-mcp   | INFO:root:SSE connection established from 172.18.0.1
 ```
 
 ---
