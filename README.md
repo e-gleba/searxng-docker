@@ -1,14 +1,14 @@
 # 🔍 SearXNG Docker
 
 > Приватный мета-поисковик **SearXNG** — готовый к запуску в Docker.
-> Безопасные настройки из коробки, минимум телеметрии, удобный интерфейс.
+> Основано на [официальной архитектуре 2026](https://docs.searxng.org/admin/installation-docker.html) с **Granian** + **Valkey**.
 
 ---
 
 ## 🚀 Быстрый старт
 
 ```bash
-git clone https://github.com/e-gleba/searxng-docker.git && cd searxng-docker && docker compose up -d
+git clone https://github.com/e-gleba/searxng-docker.git && cd searxng-docker && cp .env.example .env && docker compose up -d
 ```
 
 Откройте **http://localhost:8080** — поиск готов.
@@ -21,10 +21,10 @@ git clone https://github.com/e-gleba/searxng-docker.git && cd searxng-docker && 
 
 Этот репозиторий содержит:
 
-- ✅ Минимальный `docker-compose.yml` для запуска
+- ✅ `docker-compose.yml` на базе официального шаблона 2026
+- ✅ **Granian** (Rust ASGI-сервер) вместо устаревшего uWSGI
+- ✅ **Valkey 9** (Redis fork) для кэширования и favicon
 - ✅ Преднастроенный `settings.yml` с безопасными дефолтами
-- ✅ `uwsgi.ini` — настройка сервера и логирования
-- ✅ `limiter.toml` — конфиг лимитера (отключён)
 - ✅ `.env.example` с понятными переменными
 - ✅ Отключённая телеметрия и лишние плагины
 - ✅ Русская локаль из коробки
@@ -134,7 +134,7 @@ docker compose up -d
 | `permission denied` при `docker compose` | Убедитесь, что Docker Desktop запущен (иконка в трее) |
 | Контейнер падает с `exec format error` | В Docker Desktop → Settings → Docker Engine → убедитесь, что архитектура x86_64 |
 | Медленная работа | Settings → Resources → увеличьте RAM/CPU для WSL 2 |
-| Пустая страница / ничего не грузится | Смотрите раздел [🔥 Не открывается на 8080](#-не-открывается-на-8080-решение) ниже |
+| Пустая страница / connection refused | Смотрите раздел [🔥 Не открывается на 8080](#-не-открывается-на-8080-решение) |
 
 > 💡 **Совет:** Для удобной работы используйте [Windows Terminal](https://aka.ms/terminal) + [Oh My Posh](https://ohmyposh.dev/) — красивый prompt с Git-статусом.
 
@@ -147,52 +147,62 @@ docker compose up -d
 git clone https://github.com/e-gleba/searxng-docker.git
 cd searxng-docker
 
-# 2. Создаём .env из примера (опционально — можно редактировать)
+# 2. Создаём .env из примера
 cp .env.example .env        # Linux / macOS
 # copy .env.example .env    # Windows (PowerShell / CMD)
 
-# 3. Запускаем
+# 3. ОБЯЗАТЕЛЬНО: смените secret_key в .env (SEARXNG_SECRET)
+#    Генерация: openssl rand -hex 32
+
+# 4. Запускаем (поднимет SearXNG + Valkey)
 docker compose up -d
 ```
 
 SearXNG будет доступен на **http://localhost:8080**.
 
+Запускаются **2 контейнера**:
+- `searxng-core` — сам поисковик (Granian ASGI)
+- `searxng-valkey` — кэш Valkey 9 (Redis fork)
+
 ---
 
 ## 🔥 Не открывается на 8080? Решение
 
-Если `http://localhost:8080` показывает пустую страницу или «не удаётся подключиться»:
+Если `http://localhost:8080` показывает «connection refused» или пустую страницу:
 
-### 1. Проверьте, что контейнер запущен
+### 1. Проверьте, что оба контейнера запущены
 
 ```bash
 docker compose ps
 ```
 
-Статус должен быть `Up`. Если `Exited` или `Restarting` — смотрите логи:
+Должны быть `Up`: `searxng-core` и `searxng-valkey`. Если `Exited` или `Restarting`:
 
 ```bash
-docker compose logs -f
+docker compose logs -f core
 ```
 
 ### 2. Проверьте логи в реальном времени
 
 ```bash
+# Логи SearXNG (core)
+docker compose logs -f core
+
+# Логи Valkey
+docker compose logs -f valkey
+
 # Все логи
 docker compose logs -f
 
-# Только последние 50 строк
+# Последние 50 строк
 docker compose logs --tail=50
-
-# Логи с таймштампами
-docker compose logs -f -t
 ```
 
 В логах вы увидите:
-- Какие движки загружены
-- Какие URL запрашиваются при поиске
-- Ошибки подключения к движкам
-- HTTP-запросы (uWSGI пишет их автоматически)
+- Старт Granian-сервера и какие порты слушает
+- Загруженные движки
+- HTTP-запросы (какие URL, статусы, время)
+- Ошибки подключения к поисковым движкам (timeout, 403, 429)
 
 ### 3. Проверьте, что порт свободен
 
@@ -216,25 +226,17 @@ SEARXNG_PORT=8888
 docker compose down && docker compose up -d
 ```
 
-### 4. Убедитесь, что `./searxng/` содержит нужные файлы
+### 4. Убедитесь, что `core-config/` содержит `settings.yml`
 
 ```bash
-ls searxng/
-# Должны быть: settings.yml  limiter.toml  uwsgi.ini
-```
-
-Если файлов нет (например, клонировали старую версию) — переклонируйте:
-
-```bash
-git pull origin main
-docker compose down && docker compose up -d
+ls core-config/
+# Должен быть: settings.yml
 ```
 
 ### 5. Полный сброс (удаляет данные и пересоздаёт)
 
 ```bash
 docker compose down -v
-rm -rf data/
 docker compose up -d
 ```
 
@@ -242,43 +244,37 @@ docker compose up -d
 
 В Docker Desktop → Settings → Resources → WSL integration — ваша Ubuntu должна быть **включена**.
 
+### 7. Зайдите в контейнер для отладки
+
+```bash
+docker compose exec -it --user root core /bin/sh -l
+# Внутри контейнера:
+cat /etc/searxng/settings.yml  # проверить конфиг
+curl -v http://localhost:8080  # проверить, отвечает ли Granian
+```
+
 ---
 
 ## 📊 Логирование
 
-SearXNG пишет логи через uWSGI в stdout/stderr контейнера.
+SearXNG использует **Granian** (Rust ASGI-сервер) вместо uWSGI. Логи пишутся в stdout/stderr контейнера.
 
 ```bash
-# Смотреть логи в реальном времени
-docker compose logs -f searxng
+# Логи SearXNG в реальном времени
+docker compose logs -f core
 
 # Что видно в логах:
-# - HTTP-запросы к SearXNG (GET/POST, URL, статус, время)
-# - Запросы к поисковым движкам (какие URL, таймауты)
-# - Ошибки движков (timeout, 403, 429 и т.д.)
-# - Старт/стоп uWSGI воркеров
+# - Старт Granian (listening on 0.0.0.0:8080)
+# - HTTP-запросы к SearXNG (GET/POST, URL, статус, время в мс)
+# - Запросы к поисковым движкам
+# - Ошибки движков (timeout, 403, 429)
+# - Логи Valkey (connection, save)
 ```
 
 ### Пример лога при поиске
 
 ```
-[pid: 23|app: 0|req: 15/42] 172.17.0.1 () {48 vars in 842 bytes}
-  POST /search => generated 15234 bytes in 1823 msecs (HTTP/1.1 200)
-  8 headers in 312 bytes (1 switches on core 0)
-```
-
-### Включить детальный лог запросов
-
-Раскомментируйте строку в `searxng/uwsgi.ini`:
-
-```ini
-log-format = [%(addr)] %(method) %(uri) => %(status) (%(msecs)ms)
-```
-
-Затем перезапустите:
-
-```bash
-docker compose restart
+searxng-core  | [INFO] granian::http: 172.18.0.1 - "POST /search HTTP/1.1" 200 15234 (1823ms)
 ```
 
 ---
@@ -290,25 +286,25 @@ docker compose restart
 docker compose pull && docker compose up -d
 ```
 
-Данные и настройки сохраняются в `./searxng/` и `./data/` — обновление их не затрагивает.
+Данные сохраняются в named volumes (`core-data`, `valkey-data`) — обновление их не затрагивает.
 
 ---
 
 ## ⚙️ Изменение настроек
 
-Все настройки SearXNG хранятся в `searxng/settings.yml`.
+Все настройки SearXNG хранятся в `core-config/settings.yml`.
 
 **Важно:**
 - Ключи — в **snake_case**
-- После изменений пересоздайте контейнер:
+- После изменений перезапустите контейнер:
 
 ```bash
-docker compose restart
+docker compose restart core
 ```
 
 ### Смена `secret_key`
 
-**Обязательно** смените `secret_key` в `searxng/settings.yml` на случайную строку:
+**Обязательно** смените `SEARXNG_SECRET` в `.env` и `secret_key` в `core-config/settings.yml`:
 
 ```bash
 # Linux / macOS
@@ -318,13 +314,11 @@ openssl rand -hex 32
 [System.BitConverter]::ToString((1..32 | ForEach-Object { Get-Random -Minimum 0 -Maximum 256 })).Replace("-","").ToLower()
 ```
 
-Скопируйте результат в поле `server.secret_key`.
-
 ---
 
 ## 🔧 Добавление собственных движков (engines)
 
-Откройте `searxng/settings.yml` → секция `engines`.
+Откройте `core-config/settings.yml` → секция `engines`.
 
 Пример — добавить Yandex:
 
@@ -356,11 +350,13 @@ ui:
 
 | Переменная | По умолчанию | Описание |
 |---|---|---|
+| `SEARXNG_VERSION` | `latest` | Тег Docker-образа (или конкретная версия) |
+| `SEARXNG_HOST` | *(пусто)* | Адрес привязки (пусто = все интерфейсы) |
 | `SEARXNG_PORT` | `8080` | Порт, на котором слушает SearXNG |
-| `SEARXNG_IMAGE_TAG` | `latest` | Тег Docker-образа |
-| `INSTANCE_NAME` | `SearXNG` | Название инстанса в заголовке страницы |
-| `AUTOCOMPLETE` | `google` | Движок автодополнения (`google`, `duckduckgo`, `wikipedia`, `startpage`, или `""`) |
-| `BASE_URL` | `http://localhost:8080/` | Публичный URL инстанса |
+| `SEARXNG_INSTANCE_NAME` | `SearXNG` | Название инстанса в заголовке страницы |
+| `SEARXNG_BASE_URL` | `http://localhost:8080/` | Публичный URL инстанса |
+| `SEARXNG_SECRET` | `changeme` | Секретный ключ (ОБЯЗАТЕЛЬНО смените!) |
+| `SEARXNG_AUTOCOMPLETE` | `google` | Движок автодополнения |
 
 ---
 
@@ -368,26 +364,27 @@ ui:
 
 ```
 searxng-docker/
-├── docker-compose.yml          # Оркестрация контейнеров
+├── docker-compose.yml          # Оркестрация (SearXNG + Valkey)
 ├── .env.example                # Пример переменных окружения
-├── searxng/
-│   ├── settings.yml            # Конфиг SearXNG
-│   ├── uwsgi.ini               # Настройки uWSGI-сервера и логирования
-│   └── limiter.toml            # Конфиг лимитера (отключён)
-├── data/                       # Данные SearXNG (создаётся автоматически)
+├── core-config/
+│   └── settings.yml            # Конфиг SearXNG
 ├── README.md
 └── .gitignore
 ```
+
+**Named volumes** (создаются автоматически):
+- `core-data` → `/var/cache/searxng/` (favicon cache, данные)
+- `valkey-data` → `/data/` (кэш Valkey)
 
 ---
 
 ## 🛡️ Безопасность
 
-- `cap_drop: ALL` + минимальные `cap_add` (CHOWN, SETGID, SETUID)
-- HTTP-заголовки безопасности (X-Frame-Options, CSP, Referrer-Policy)
+- HTTP-заголовки безопасности (X-Frame-Options, X-XSS-Protection, Referrer-Policy)
 - `limiter: false` — подходит для приватного инстанса (не для публичного!)
 - `image_proxy: true` — проксирование картинок через SearXNG для приватности
 - Телеметрия и метрики **отключены**
+- **Valkey** для кэширования (быстрее и безопаснее Redis)
 
 > Для **публичного** инстанса включите `server.limiter: true` и настройте reverse proxy (nginx/caddy).
 
