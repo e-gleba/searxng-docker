@@ -8,10 +8,14 @@
 ## 🚀 Быстрый старт
 
 ```bash
-git clone https://github.com/e-gleba/searxng-docker.git && cd searxng-docker && cp .env.example .env && docker compose up -d
+git clone https://github.com/e-gleba/searxng-docker.git
+cd searxng-docker
+docker compose up -d
 ```
 
 Откройте **http://localhost:8080** — поиск готов.
+
+**Всё. Никаких `.env` файлов не нужно.**
 
 ---
 
@@ -23,11 +27,11 @@ git clone https://github.com/e-gleba/searxng-docker.git && cd searxng-docker && 
 
 - ✅ `docker-compose.yml` на базе официального шаблона 2026
 - ✅ **Granian** (Rust ASGI-сервер) вместо устаревшего uWSGI
-- ✅ **Valkey 9** (Redis fork) для кэширования и favicon
+- ✅ **Valkey 9** (Redis fork) для кэширования
 - ✅ Преднастроенный `settings.yml` с безопасными дефолтами
-- ✅ `.env.example` с понятными переменными
 - ✅ Отключённая телеметрия и лишние плагины
 - ✅ Русская локаль из коробки
+- ✅ **Одна команда для запуска** — никаких лишних файлов
 
 ---
 
@@ -74,55 +78,48 @@ sudo usermod -aG docker $USER
 
 ### Шаг 1 — Включить WSL 2
 
-Откройте **PowerShell от имени администратора** и выполните:
+Откройте **PowerShell от имени администратора**:
 
 ```powershell
 wsl --install
 ```
 
-Это установит WSL 2 + Ubuntu по умолчанию. **Перезагрузите ПК** после завершения.
+**Перезагрузите ПК** после завершения.
 
-> 📖 Подробная инструкция Microsoft: [Install WSL on Windows](https://learn.microsoft.com/en-us/windows/wsl/install)
+> 📖 [Install WSL on Windows](https://learn.microsoft.com/en-us/windows/wsl/install)
 
 ### Шаг 2 — Установить Docker Desktop
 
-1. Скачайте установщик: [Docker Desktop for Windows](https://www.docker.com/products/docker-desktop/)
-2. Запустите `Docker Desktop Installer.exe`
-3. В установщике убедитесь, что включены:
-   - ✅ **Use WSL 2 instead of Hyper-V** (рекомендуется)
+1. Скачайте: [Docker Desktop for Windows](https://www.docker.com/products/docker-desktop/)
+2. Запустите установщик
+3. Включите:
+   - ✅ **Use WSL 2 instead of Hyper-V**
    - ✅ **Add shortcut to desktop**
-4. Нажмите **OK** → дождитесь окончания → **перезагрузите ПК**
+4. Нажмите **OK** → **перезагрузите ПК**
 
-> 📖 Официальный гайд Docker: [Install Docker Desktop on Windows](https://docs.docker.com/desktop/setup/install/windows-install/)
+> 📖 [Install Docker Desktop on Windows](https://docs.docker.com/desktop/setup/install/windows-install/)
 
 ### Шаг 3 — Настроить Docker Desktop
 
 1. Запустите **Docker Desktop**
-2. Перейдите в **Settings** (⚙️) → **General**:
+2. **Settings** (⚙️) → **General**:
    - ✅ **Start Docker Desktop when you log in**
    - ✅ **Use the WSL 2 based engine**
-3. Перейдите в **Settings** → **Resources** → **WSL integration**:
+3. **Settings** → **Resources** → **WSL integration**:
    - ✅ **Enable integration with my default WSL distro**
-   - Включите интеграцию для нужных дистрибутивов (Ubuntu и т.д.)
-4. Нажмите **Apply & Restart**
+4. **Apply & Restart**
 
 ### Шаг 4 — Запустить SearXNG
 
-Откройте **PowerShell** или **Windows Terminal** в папке проекта:
+Откройте **PowerShell** или **Windows Terminal**:
 
 ```powershell
-# Клонируем репозиторий
 git clone https://github.com/e-gleba/searxng-docker.git
 cd searxng-docker
-
-# Создаём .env
-copy .env.example .env
-
-# Запускаем
 docker compose up -d
 ```
 
-Откройте **http://localhost:8080** в браузере — готово.
+Откройте **http://localhost:8080** — готово.
 
 ### ⚡ Частые проблемы на Windows
 
@@ -130,45 +127,31 @@ docker compose up -d
 |---|---|
 | `docker: command not found` | Перезапустите терминал после установки Docker Desktop |
 | `WSL 2 is not installed` | Выполните `wsl --install` и перезагрузитесь |
-| Порт 8080 занят | Измените `SEARXNG_PORT` в `.env` на другой (например, `8888`) |
-| `permission denied` при `docker compose` | Убедитесь, что Docker Desktop запущен (иконка в трее) |
-| Контейнер падает с `exec format error` | В Docker Desktop → Settings → Docker Engine → убедитесь, что архитектура x86_64 |
-| Медленная работа | Settings → Resources → увеличьте RAM/CPU для WSL 2 |
-| Пустая страница / connection refused | Смотрите раздел [🔥 Не открывается на 8080](#-не-открывается-на-8080-решение) |
+| Порт 8080 занят | Измените порт в `core-config/settings.yml` и `docker-compose.yml` |
+| `permission denied` | Убедитесь, что Docker Desktop запущен (иконка в трее) |
+| Connection refused | Смотрите раздел [🔥 Не открывается на 8080](#-не-открывается-на-8080-решение) |
 
-> 💡 **Совет:** Для удобной работы используйте [Windows Terminal](https://aka.ms/terminal) + [Oh My Posh](https://ohmyposh.dev/) — красивый prompt с Git-статусом.
+> 💡 Используйте [Windows Terminal](https://aka.ms/terminal) + [Oh My Posh](https://ohmyposh.dev/) для удобной работы.
 
 ---
 
 ## 📦 Установка и запуск
 
 ```bash
-# 1. Клонируем репозиторий
 git clone https://github.com/e-gleba/searxng-docker.git
 cd searxng-docker
-
-# 2. Создаём .env из примера
-cp .env.example .env        # Linux / macOS
-# copy .env.example .env    # Windows (PowerShell / CMD)
-
-# 3. ОБЯЗАТЕЛЬНО: смените secret_key в .env (SEARXNG_SECRET)
-#    Генерация: openssl rand -hex 32
-
-# 4. Запускаем (поднимет SearXNG + Valkey)
 docker compose up -d
 ```
 
 SearXNG будет доступен на **http://localhost:8080**.
 
 Запускаются **2 контейнера**:
-- `searxng-core` — сам поисковик (Granian ASGI)
+- `searxng-core` — поисковик (Granian ASGI)
 - `searxng-valkey` — кэш Valkey 9 (Redis fork)
 
 ---
 
 ## 🔥 Не открывается на 8080? Решение
-
-Если `http://localhost:8080` показывает «connection refused» или пустую страницу:
 
 ### 1. Проверьте, что оба контейнера запущены
 
@@ -182,10 +165,10 @@ docker compose ps
 docker compose logs -f core
 ```
 
-### 2. Проверьте логи в реальном времени
+### 2. Проверьте логи
 
 ```bash
-# Логи SearXNG (core)
+# Логи SearXNG
 docker compose logs -f core
 
 # Логи Valkey
@@ -214,26 +197,34 @@ ss -tlnp | grep 8080
 netstat -ano | findstr "8080"
 ```
 
-Если порт занят — измените `SEARXNG_PORT` в `.env`:
+Если порт занят — измените в двух местах:
 
-```env
-SEARXNG_PORT=8888
+**1. `docker-compose.yml`** — строка с портами:
+```yaml
+ports:
+  - "9090:8080"  # внешний:внутренний
 ```
 
-Затем пересоздайте:
+**2. `core-config/settings.yml`** — секция `server`:
+```yaml
+server:
+  port: 8080  # внутренний порт (не меняйте)
+  base_url: "http://localhost:9090/"  # внешний URL
+```
 
+Затем:
 ```bash
 docker compose down && docker compose up -d
 ```
 
-### 4. Убедитесь, что `core-config/` содержит `settings.yml`
+### 4. Убедитесь, что `core-config/settings.yml` существует
 
 ```bash
 ls core-config/
 # Должен быть: settings.yml
 ```
 
-### 5. Полный сброс (удаляет данные и пересоздаёт)
+### 5. Полный сброс
 
 ```bash
 docker compose down -v
@@ -257,19 +248,18 @@ curl -v http://localhost:8080  # проверить, отвечает ли Grani
 
 ## 📊 Логирование
 
-SearXNG использует **Granian** (Rust ASGI-сервер) вместо uWSGI. Логи пишутся в stdout/stderr контейнера.
+SearXNG использует **Granian** (Rust ASGI-сервер). Логи пишутся в stdout/stderr контейнера.
 
 ```bash
 # Логи SearXNG в реальном времени
 docker compose logs -f core
-
-# Что видно в логах:
-# - Старт Granian (listening on 0.0.0.0:8080)
-# - HTTP-запросы к SearXNG (GET/POST, URL, статус, время в мс)
-# - Запросы к поисковым движкам
-# - Ошибки движков (timeout, 403, 429)
-# - Логи Valkey (connection, save)
 ```
+
+Что видно в логах:
+- Старт Granian (listening on 0.0.0.0:8080)
+- HTTP-запросы к SearXNG (GET/POST, URL, статус, время в мс)
+- Запросы к поисковым движкам
+- Ошибки движков (timeout, 403, 429)
 
 ### Пример лога при поиске
 
@@ -282,7 +272,6 @@ searxng-core  | [INFO] granian::http: 172.18.0.1 - "POST /search HTTP/1.1" 200 1
 ## 🔄 Обновление SearXNG
 
 ```bash
-# Подтянуть новый образ и пересоздать контейнер
 docker compose pull && docker compose up -d
 ```
 
@@ -292,11 +281,11 @@ docker compose pull && docker compose up -d
 
 ## ⚙️ Изменение настроек
 
-Все настройки SearXNG хранятся в `core-config/settings.yml`.
+**Все настройки SearXNG хранятся в `core-config/settings.yml`.**
 
-**Важно:**
-- Ключи — в **snake_case**
-- После изменений перезапустите контейнер:
+Это единственный файл конфигурации. Порт, URL, движки, плагины — всё здесь.
+
+После изменений перезапустите:
 
 ```bash
 docker compose restart core
@@ -304,7 +293,7 @@ docker compose restart core
 
 ### Смена `secret_key`
 
-**Обязательно** смените `SEARXNG_SECRET` в `.env` и `secret_key` в `core-config/settings.yml`:
+**Обязательно** смените `secret_key` в `core-config/settings.yml`:
 
 ```bash
 # Linux / macOS
@@ -313,6 +302,27 @@ openssl rand -hex 32
 # Windows (PowerShell)
 [System.BitConverter]::ToString((1..32 | ForEach-Object { Get-Random -Minimum 0 -Maximum 256 })).Replace("-","").ToLower()
 ```
+
+Скопируйте результат в поле `server.secret_key`.
+
+### Изменение порта
+
+Если порт 8080 занят, измените в двух местах:
+
+**1. `docker-compose.yml`** — маппинг портов:
+```yaml
+ports:
+  - "9090:8080"  # формат: внешний_порт:внутренний_порт
+```
+
+**2. `core-config/settings.yml`** — base_url:
+```yaml
+server:
+  port: 8080  # НЕ МЕНЯЙТЕ (внутренний порт контейнера)
+  base_url: "http://localhost:9090/"  # внешний URL
+```
+
+Затем `docker compose down && docker compose up -d`.
 
 ---
 
@@ -344,30 +354,14 @@ ui:
 
 ---
 
-## 🌐 Переменные окружения
-
-Все переменные задаются в файле `.env` (создаётся из `.env.example`).
-
-| Переменная | По умолчанию | Описание |
-|---|---|---|
-| `SEARXNG_VERSION` | `latest` | Тег Docker-образа (или конкретная версия) |
-| `SEARXNG_HOST` | *(пусто)* | Адрес привязки (пусто = все интерфейсы) |
-| `SEARXNG_PORT` | `8080` | Порт, на котором слушает SearXNG |
-| `SEARXNG_INSTANCE_NAME` | `SearXNG` | Название инстанса в заголовке страницы |
-| `SEARXNG_BASE_URL` | `http://localhost:8080/` | Публичный URL инстанса |
-| `SEARXNG_SECRET` | `changeme` | Секретный ключ (ОБЯЗАТЕЛЬНО смените!) |
-| `SEARXNG_AUTOCOMPLETE` | `google` | Движок автодополнения |
-
----
-
 ## 📁 Структура репозитория
 
 ```
 searxng-docker/
 ├── docker-compose.yml          # Оркестрация (SearXNG + Valkey)
-├── .env.example                # Пример переменных окружения
 ├── core-config/
-│   └── settings.yml            # Конфиг SearXNG
+│   └── settings.yml            # ВСЕ настройки SearXNG (единственный конфиг)
+├── .env.example                # Пример необязательных переменных
 ├── README.md
 └── .gitignore
 ```
