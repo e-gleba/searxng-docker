@@ -1,9 +1,9 @@
 # 🔍 SearXNG Docker
 
-Production-ready SearXNG setup with MCP server integration for LLM clients.
+Production-ready SearXNG deployment with Docker Compose.
 
-**Stack:** SearXNG (Granian) + Valkey + MCP Server  
-**Architecture:** Docker Compose with health checks and isolated networking
+**Stack:** SearXNG (Granian) + Valkey  
+**Architecture:** Docker Compose v2 with health checks and isolated networking
 
 ---
 
@@ -12,28 +12,130 @@ Production-ready SearXNG setup with MCP server integration for LLM clients.
 ```bash
 git clone https://github.com/e-gleba/searxng-docker.git
 cd searxng-docker
-docker compose up -d --build
+docker compose up -d
 ```
 
-**Services will be available at:**
-- 🔍 **SearXNG:** http://localhost:8080
-- 🤖 **MCP Server:** http://localhost:8000/mcp
+**SearXNG will be available at:** http://localhost:8080
 
-See [INFRASTRUCTURE.md](INFRASTRUCTURE.md) for complete endpoint documentation.
+See [ENDPOINTS.md](ENDPOINTS.md) for complete endpoint documentation.
 
 ---
 
 ## 📋 Features
 
 - ✅ **SearXNG 2026** with Granian ASGI server
-- ✅ **MCP Server** for LLM integration (Claude, Cursor, etc.)
-- ✅ **Valkey** high-performance cache
+- ✅ **Valkey** high-performance Redis-compatible cache
 - ✅ **Health checks** for all services
 - ✅ **Isolated network** for security
 - ✅ **Structured logging** with rotation
 - ✅ **Zero authentication** for local development
 - ✅ **Vim hotkeys** enabled
 - ✅ **Dark theme** by default
+
+---
+
+## 💻 Installation
+
+### ALT Linux (ALT GNOME)
+
+Установка Docker на ALT Linux:
+
+```bash
+# Обновите систему
+sudo apt-get update
+sudo apt-get dist-upgrade -y
+
+# Установите Docker
+sudo apt-get install -y docker-engine
+
+# Установите Docker Compose
+sudo apt-get install -y docker-compose
+
+# Добавьте пользователя в группу docker
+sudo usermod -aG docker $USER
+
+# Перезапустите сессию или выполните:
+newgrp docker
+
+# Проверьте установку
+docker --version
+docker compose version
+```
+
+Запустите стек:
+
+```bash
+git clone https://github.com/e-gleba/searxng-docker.git
+cd searxng-docker
+docker compose up -d
+```
+
+### Windows (Docker Desktop)
+
+**Requirements:** Windows 10/11 (64-bit) with WSL 2 or Hyper-V enabled.
+
+#### Option 1: Download Installer
+
+1. Download Docker Desktop from [official site](https://www.docker.com/products/docker-desktop/)
+2. Run `Docker Desktop Installer.exe`
+3. During installation, ensure:
+   - ✅ Use WSL 2 instead of Hyper-V (recommended)
+   - ✅ Add shortcut to desktop
+4. Restart computer when prompted
+5. Launch Docker Desktop and wait for "Docker is running"
+
+#### Option 2: Winget (Windows Package Manager)
+
+```powershell
+# Open PowerShell as Administrator
+winget install -e --id Docker.DockerDesktop
+
+# Restart computer
+shutdown /r
+```
+
+After restart, launch Docker Desktop and wait for initialization.
+
+#### Verify Installation
+
+```powershell
+docker --version
+docker compose version
+```
+
+#### Deploy Stack
+
+```powershell
+git clone https://github.com/e-gleba/searxng-docker.git
+cd searxng-docker
+docker compose up -d
+```
+
+**Note:** If you see WSL errors, enable WSL 2:
+
+```powershell
+wsl --install
+wsl --set-default-version 2
+```
+
+### Generic Linux (Ubuntu/Debian)
+
+```bash
+# Install Docker
+curl -fsSL https://get.docker.com | sh
+
+# Add user to docker group
+sudo usermod -aG docker $USER
+newgrp docker
+
+# Install Docker Compose (if not bundled)
+sudo apt-get install -y docker-compose-plugin
+
+# Deploy
+git clone https://github.com/e-gleba/searxng-docker.git
+cd searxng-docker
+docker compose up -d
+```
 
 ---
 
@@ -47,11 +149,6 @@ docker compose ps
 
 # Test SearXNG
 curl http://localhost:8080/healthz
-
-# Test MCP server
-curl -X POST http://localhost:8000/mcp \
-  -H "Content-Type: application/json" \
-  -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}' | jq
 ```
 
 ### Search Examples
@@ -64,74 +161,11 @@ curl "http://localhost:8080/search?q=rust&format=json" | jq '.results[0]'
 curl "http://localhost:8080/search?q=python&categories=it&time_range=month&format=json" | jq
 ```
 
-### MCP Examples
-
-```bash
-# Web search via MCP
-curl -X POST http://localhost:8000/mcp \
-  -H "Content-Type: application/json" \
-  -d '{
-    "jsonrpc": "2.0",
-    "id": 1,
-    "method": "tools/call",
-    "params": {
-      "name": "search_web",
-      "arguments": {"query": "rust programming"}
-    }
-  }' | jq
-
-# Scrape website
-curl -X POST http://localhost:8000/mcp \
-  -H "Content-Type: application/json" \
-  -d '{
-    "jsonrpc": "2.0",
-    "id": 2,
-    "method": "tools/call",
-    "params": {
-      "name": "get_website",
-      "arguments": {"url": "https://example.com"}
-    }
-  }' | jq
-```
-
----
-
-## 🤖 LLM Client Configuration
-
-### Claude Desktop
-
-Add to `claude_desktop_config.json`:
-
-```json
-{
-  "mcpServers": {
-    "searxng": {
-      "command": "docker",
-      "args": ["exec", "-i", "searxng-mcp", "python", "mcp_server.py"]
-    }
-  }
-}
-```
-
-### Cursor
-
-Add to `.cursor/mcp.json`:
-
-```json
-{
-  "mcpServers": {
-    "searxng": {
-      "url": "http://localhost:8000/mcp"
-    }
-  }
-}
-```
-
 ---
 
 ## 📖 Documentation
 
-- **[INFRASTRUCTURE.md](INFRASTRUCTURE.md)** - Complete endpoint map and API documentation
+- **[ENDPOINTS.md](ENDPOINTS.md)** - Complete endpoint map and API documentation
 - **[core-config/settings.yml](core-config/settings.yml)** - SearXNG configuration
 
 ---
@@ -159,15 +193,15 @@ docker compose logs -f
 
 # View specific service
 docker compose logs -f core
-docker compose logs -f mcp
+docker compose logs -f valkey
 ```
 
 ### Update
 
 ```bash
-# Pull latest images and rebuild
+# Pull latest images
 docker compose pull
-docker compose up -d --build
+docker compose up -d
 ```
 
 ### Reset
@@ -177,7 +211,7 @@ docker compose up -d --build
 docker compose down -v
 
 # Start fresh
-docker compose up -d --build
+docker compose up -d
 ```
 
 ---
@@ -201,19 +235,6 @@ engines:
 ```
 
 Restart to apply: `docker compose restart core`
-
-### MCP Server
-
-Environment variables in `docker-compose.yml`:
-
-```yaml
-environment:
-  - DESIRED_TIMEZONE=Europe/Moscow
-  - PAGE_CONTENT_WORDS_LIMIT=10000
-  - MAX_IMAGE_RESULTS=20
-```
-
-Rebuild to apply: `docker compose up -d --build mcp`
 
 ---
 
@@ -242,7 +263,7 @@ docker compose config
 
 # Clean rebuild
 docker compose down -v
-docker compose up -d --build
+docker compose up -d
 ```
 
 ### Port already in use
@@ -250,28 +271,11 @@ docker compose up -d --build
 ```bash
 # Find process
 lsof -i :8080
-lsof -i :8000
 
 # Stop or change ports in docker-compose.yml
 ```
 
-### MCP connection issues
-
-```bash
-# Test endpoint
-curl http://localhost:8000/mcp \
-  -X POST \
-  -H "Content-Type: application/json" \
-  -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}'
-
-# Check logs
-docker compose logs mcp
-
-# Restart
-docker compose restart mcp
-```
-
-See [INFRASTRUCTURE.md](INFRASTRUCTURE.md) for detailed troubleshooting.
+See [ENDPOINTS.md](ENDPOINTS.md) for detailed troubleshooting.
 
 ---
 
@@ -282,9 +286,7 @@ searxng-docker/
 ├── docker-compose.yml          # Service orchestration
 ├── core-config/
 │   └── settings.yml            # SearXNG configuration
-├── mcp-server/
-│   └── Dockerfile              # Custom MCP server build
-├── INFRASTRUCTURE.md           # Complete endpoint documentation
+├── ENDPOINTS.md                # Complete endpoint documentation
 ├── README.md                   # This file
 └── .gitignore                  # Git ignore rules
 ```
@@ -293,5 +295,4 @@ searxng-docker/
 
 ## 📄 License
 
-SearXNG: AGPL-3.0  
-MCP Server: MIT
+SearXNG: AGPL-3.0
