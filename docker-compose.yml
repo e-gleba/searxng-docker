@@ -1,47 +1,38 @@
 # =============================================================================
-# SearXNG Production Stack
+# SearXNG Docker — Production Stack
 # =============================================================================
-# Architecture: SearXNG Core + Valkey Cache
-# Standards: Docker Compose v2, Health Checks, Structured Logging
-# Auth: None (local-first, no-auth ready for development)
+# Architecture:  SearXNG (Granian) + Valkey Cache
+# Platforms:     linux/amd64, linux/arm64
+# Standards:     Docker Compose v2, Health Checks, Structured Logging
 #
-# ENDPOINTS AFTER DEPLOYMENT:
-# ┌─────────────────────────────────────────────────────────────────────────┐
-# │ Service      │ Container        │ Port  │ Status    │ URL              │
-# ├─────────────────────────────────────────────────────────────────────────┤
-# │ SearXNG      │ searxng-core     │ 8080  │ ✓ Public  │ localhost:8080   │
-# │ Valkey       │ searxng-valkey   │ 6379  │ ✗ Internal│ (not exposed)    │
-# └─────────────────────────────────────────────────────────────────────────┘
+# Usage:
+#   cp .env.example .env && $EDITOR .env
+#   docker compose up -d
 #
-# SEARXNG ENDPOINTS:
-#   • Web UI:        http://localhost:8080/
-#   • Search API:    http://localhost:8080/search?q={query}&format=json
-#   • Preferences:   http://localhost:8080/preferences
-#   • Health Check:  http://localhost:8080/healthz
+# Endpoints:
+#   Web UI:      http://localhost:${SEARXNG_PORT:-8080}/
+#   Search API:  http://localhost:${SEARXNG_PORT:-8080}/search?q={query}&format=json
+#   Health:      http://localhost:${SEARXNG_PORT:-8080}/healthz
 #
-# HEALTH CHECK COMMANDS:
-#   • docker compose ps
-#   • curl -f http://localhost:8080/healthz
-#   • docker exec searxng-valkey valkey-cli ping
-#
-# See ENDPOINTS.md for complete API documentation
+# See ENDPOINTS.md for full API reference.
 # =============================================================================
 
 name: searxng
 
 services:
+
   # ---------------------------------------------------------------------------
-  # Valkey - High-performance cache (Redis-compatible)
+  # Valkey — High-performance Redis-compatible cache
   # ---------------------------------------------------------------------------
   valkey:
-    image: valkey/valkey:8-alpine
+    image: valkey/valkey:${VALKEY_VERSION:-8-alpine}
     container_name: searxng-valkey
     restart: unless-stopped
     command: >
       valkey-server
       --save 60 1
       --loglevel notice
-      --maxmemory 256mb
+      --maxmemory ${VALKEY_MAX_MEMORY:-256mb}
       --maxmemory-policy allkeys-lru
     volumes:
       - valkey-data:/data
@@ -67,20 +58,20 @@ services:
           memory: 128M
 
   # ---------------------------------------------------------------------------
-  # SearXNG Core - Privacy-respecting metasearch engine
+  # SearXNG Core — Privacy-respecting metasearch engine
   # ---------------------------------------------------------------------------
   core:
-    image: searxng/searxng:latest
+    image: ${SEARXNG_IMAGE:-searxng/searxng:latest}
     container_name: searxng-core
     restart: unless-stopped
     ports:
-      - "8080:8080"
+      - "${SEARXNG_PORT:-8080}:8080"
     volumes:
       - ./core-config:/etc/searxng:ro
       - core-data:/var/cache/searxng
     environment:
-      SEARXNG_BASE_URL: http://localhost:8080/
-      SEARXNG_SECRET: changeme-use-openssl-rand-hex-32
+      SEARXNG_BASE_URL: ${SEARXNG_BASE_URL:-http://localhost:8080/}
+      SEARXNG_SECRET: ${SEARXNG_SECRET:?Set SEARXNG_SECRET in .env — generate with: openssl rand -hex 32}
     depends_on:
       valkey:
         condition: service_healthy

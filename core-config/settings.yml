@@ -1,7 +1,15 @@
-# ============================================
-# SearXNG settings.yml — оптимизировано для домашнего использования
-# Vim hotkeys, dark theme, максимальная скорость
-# ============================================
+# =============================================================================
+# SearXNG Configuration — Optimized for C++ Game Development Teams
+# =============================================================================
+# Docs: https://docs.searxng.org/admin/settings/
+#
+# Tuned for cross-platform C++ game development:
+#   - cppreference (EN/RU) engines
+#   - DevDocs multi-language API search
+#   - Godot Engine documentation
+#   - Dark theme, Vim hotkeys, infinite scroll
+#   - Anti-ban suspension tuned for heavy usage
+# =============================================================================
 
 use_default_settings: true
 
@@ -13,7 +21,7 @@ server:
   port: 8080
   bind_address: "0.0.0.0"
   secret_key: "changeme"
-  base_url: "http://localhost:8080/"
+  base_url: false
   image_proxy: true
   limiter: false
   public_instance: false
@@ -26,22 +34,22 @@ search:
   formats:
     - html
     - json
-  
-  # Защита от банов — увеличенное время приостановки после ошибок
+
+  # Anti-ban: extended suspension after engine errors
   suspended_times:
-    SearxEngineAccessDenied: 3600      # 1 час после 403
-    SearxEngineCaptcha: 7200            # 2 часа после капчи
-    SearxEngineTooManyRequests: 1800    # 30 минут после 429
-    cf_SearxEngineCaptcha: 86400        # 24 часа (Cloudflare)
-    cf_SearxEngineAccessDenied: 86400   # 24 часа
-    recaptcha_SearxEngineCaptcha: 86400 # 24 часа
+    SearxEngineAccessDenied: 3600
+    SearxEngineCaptcha: 7200
+    SearxEngineTooManyRequests: 1800
+    cf_SearxEngineCaptcha: 86400
+    cf_SearxEngineAccessDenied: 86400
+    recaptcha_SearxEngineCaptcha: 86400
 
 ui:
   default_theme: simple
-  default_locale: "ru"
-  hotkeys: vim  # Vim-навигация: j/k — вверх/вниз, / — фокус на поиск, n/N — следующий/предыдущий
+  default_locale: "en"
+  hotkeys: vim
   theme_args:
-    simple_style: dark  # Темная тема (auto, light, dark, black)
+    simple_style: dark
   infinite_scroll: true
 
 outgoing:
@@ -50,65 +58,47 @@ outgoing:
   pool_connections: 100
   pool_maxsize: 20
   enable_http2: true
-  
-  # Опционально: API ключи для стабильной работы (раскомментируй и добавь свои)
-  # Brave API: https://brave.com/search/api/ (бесплатно 2000 запросов/месяц)
-  # Google Custom Search: https://console.cloud.google.com/ (бесплатно 100 запросов/день)
-  
-  # Опционально: прокси для анонимности (раскомментируй если нужно)
-  # proxies:
-  #   all://:
-  #     - "http://proxy1:8080"
-  #     - "socks5://proxy2:1080"
-  
-  # Или Tor (медленно, но анонимно):
-  # proxies:
-  #   all://:
-  #     - "socks5h://127.0.0.1:9050"
-  # using_tor_proxy: true
-  # extra_proxy_timeout: 10
 
-# Включаем движки, отключённые по умолчанию
+# =============================================================================
+# Search Engines
+# =============================================================================
 engines:
+
+  # --- Enabled beyond defaults ---
   - name: yandex
     disabled: false
-
   - name: yandex images
     disabled: false
 
-# Отключаем bloat (медленные/ненадёжные движки)
+  # --- Disabled (slow or unreliable) ---
   - name: bing
     disabled: true
-
   - name: bing images
     disabled: true
-
   - name: bing news
     disabled: true
-
   - name: bing videos
     disabled: true
-
   - name: yahoo
     disabled: true
-
   - name: qwant
     disabled: true
-
   - name: mojeek
     disabled: true
-
   - name: hackernews
     disabled: true
 
-  # Отключаем Tor-only движки (требуют Tor proxy)
+  # --- Disabled (require Tor proxy) ---
   - name: ahmia
     disabled: true
-
   - name: torch
     disabled: true
 
-# Custom dev-движки
+  # ===========================================================================
+  # C++ Game Development Engines
+  # ===========================================================================
+
+  # C++ Standard Library Reference (English)
   - name: cppreference
     engine: xpath
     shortcut: cpp
@@ -124,6 +114,7 @@ engines:
       require_api_key: false
       results: HTML
 
+  # C++ Standard Library Reference (Russian)
   - name: cppreference ru
     engine: xpath
     shortcut: cppru
@@ -138,6 +129,7 @@ engines:
       require_api_key: false
       results: HTML
 
+  # DevDocs — Multi-language API documentation (C, C++, CMake, etc.)
   - name: devdocs
     engine: xpath
     shortcut: dd
@@ -152,34 +144,42 @@ engines:
       require_api_key: false
       results: HTML
 
-# Плагины — официальный формат (dict с fully-qualified class names)
+  # Godot Engine Documentation
+  - name: godot docs
+    engine: xpath
+    shortcut: godot
+    categories: [it]
+    search_url: https://docs.godotengine.org/en/stable/search.html?q={query}&check_keywords=yes&area=default
+    url_xpath: //div[contains(@class,'search-result')]//a[@class='headerlink']/@href | //div[contains(@class,'search-result')]/a/@href
+    title_xpath: //div[contains(@class,'search-result')]//a[@class='headerlink'] | //div[contains(@class,'search-result')]/a
+    content_xpath: //div[contains(@class,'search-result')]//p
+    about:
+      website: https://docs.godotengine.org/
+      use_official_api: false
+      require_api_key: false
+      results: HTML
+
+# =============================================================================
+# Plugins
+# =============================================================================
 plugins:
   searx.plugins.calculator.SXNGPlugin:
     active: true
-
   searx.plugins.infinite_scroll.SXNGPlugin:
     active: true
-
   searx.plugins.hash_plugin.SXNGPlugin:
     active: true
-
   searx.plugins.unit_converter.SXNGPlugin:
     active: true
-
   searx.plugins.tracker_url_remover.SXNGPlugin:
     active: true
-
   searx.plugins.hostnames.SXNGPlugin:
     active: true
-
   searx.plugins.time_zone.SXNGPlugin:
     active: true
-
   searx.plugins.self_info.SXNGPlugin:
     active: true
-
   searx.plugins.oa_doi_rewrite.SXNGPlugin:
     active: false
-
   searx.plugins.tor_check.SXNGPlugin:
     active: false
