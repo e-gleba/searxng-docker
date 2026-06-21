@@ -1,5 +1,5 @@
 # ============================================
-# SearXNG settings.yml — минимальный, на базе официальных дефолтов
+# SearXNG settings.yml — оптимизирован для скорости и эффективности
 # https://docs.searxng.org/admin/settings/settings.html#use-default-settings
 # ============================================
 
@@ -7,15 +7,15 @@ use_default_settings: true
 
 general:
   instance_name: "SearXNG"
-  enable_metrics: false
+  enable_metrics: false  # отключена телеметрия
 
 server:
   port: 8080
   bind_address: "0.0.0.0"
-  secret_key: "changeme"
+  secret_key: "changeme"  # ОБЯЗАТЕЛЬНО смените!
   base_url: "http://localhost:8080/"
-  image_proxy: true
-  limiter: false
+  image_proxy: true  # проксирование картинок (privacy + performance)
+  limiter: false  # отключено для приватного инстанса
   method: "POST"
 
 search:
@@ -33,47 +33,134 @@ ui:
     simple_style: auto
   infinite_scroll: true
 
+# Оптимизация таймаутов для скорости
 outgoing:
-  request_timeout: 6.0
-  max_request_timeout: 15.0
+  request_timeout: 4.0  # уменьшено с 6.0 для быстроты
+  max_request_timeout: 10.0  # уменьшено с 15.0
   enable_http2: true
+  pool_connections: 100
+  pool_maxsize: 20
 
-# Включаем движки, отключённые по умолчанию в официальном конфиге.
-# Все остальные (google, duckduckgo, brave, wikipedia, github,
-# stackoverflow, arxiv, openstreetmap, youtube и т.д.)
-# уже включены через use_default_settings: true
+# Отключаем медленные/ненужные движки, включаем полезные
 engines:
+  # === ОТКЛЮЧАЕМ BLOAT ===
+  - name: bing
+    disabled: true
+
+  - name: bing images
+    disabled: true
+
+  - name: bing news
+    disabled: true
+
+  - name: bing videos
+    disabled: true
+
+  - name: yahoo
+    disabled: true
+
+  - name: yahoo news
+    disabled: true
+
+  - name: qwant
+    disabled: true
+
+  - name: qwant news
+    disabled: true
+
+  - name: qwant images
+    disabled: true
+
+  - name: qwant videos
+    disabled: true
+
+  # Медленные/ненадёжные
+  - name: mojeek
+    disabled: true
+
+  - name: mojeek images
+    disabled: true
+
+  - name: hackernews
+    disabled: true  # часто таймаутит
+
+  # === ВКЛЮЧАЕМ YANDEX (был отключён по умолчанию) ===
   - name: yandex
     disabled: false
+    timeout: 5.0
 
   - name: yandex images
     disabled: false
+    timeout: 5.0
 
-  - name: bing
-    disabled: false
+  # === ОПТИМИЗИРУЕМ ТАЙМАУТЫ ДЛЯ МЕДЛЕННЫХ ДВИЖКОВ ===
+  - name: arxiv
+    timeout: 5.0  # уменьшено с 10.0
 
-  - name: mojeek
-    disabled: false
+  - name: pubmed
+    timeout: 5.0
 
-  - name: mojeek images
-    disabled: false
+  - name: crossref
+    timeout: 8.0  # уменьшено с 30
 
-  - name: hackernews
-    disabled: false
+  - name: openairepublications
+    timeout: 5.0
 
-  - name: brave
-    disabled: false
+  - name: openairedatasets
+    timeout: 5.0
 
-  - name: brave.images
-    disabled: false
+  # === CUSTOM DEV ENGINES ===
+  # cppreference — C++ документация
+  - name: cppreference
+    engine: xpath
+    shortcut: cpp
+    categories: [it, science]
+    paging: false
+    search_url: https://en.cppreference.com/mwiki/index.php?search={query}
+    url_xpath: //ul[@class='mw-search-results']/li//a/@href
+    title_xpath: //ul[@class='mw-search-results']/li//a
+    content_xpath: //ul[@class='mw-search-results']/li/div[@class='searchresult']
+    about:
+      website: https://en.cppreference.com
+      wikidata_id: Q1058560
+      use_official_api: false
+      require_api_key: false
+      results: HTML
 
-  - name: brave.videos
-    disabled: false
+  # cppreference (русская версия)
+  - name: cppreference ru
+    engine: xpath
+    shortcut: cppru
+    categories: [it, science]
+    paging: false
+    search_url: https://ru.cppreference.com/mwiki/index.php?search={query}
+    url_xpath: //ul[@class='mw-search-results']/li//a/@href
+    title_xpath: //ul[@class='mw-search-results']/li//a
+    content_xpath: //ul[@class='mw-search-results']/li/div[@class='searchresult']
+    about:
+      website: https://ru.cppreference.com
+      use_official_api: false
+      require_api_key: false
+      results: HTML
 
-  - name: brave.news
-    disabled: false
+  # DevDocs.io — унифицированная документация
+  - name: devdocs
+    engine: xpath
+    shortcut: dd
+    categories: [it]
+    paging: false
+    search_url: https://devdocs.io/#q={query}
+    url_xpath: //div[@class='_list-item']/a/@href
+    title_xpath: //div[@class='_list-item']/a
+    content_xpath: //div[@class='_list-item']/div[@class='_snippet']
+    timeout: 3.0
+    about:
+      website: https://devdocs.io
+      use_official_api: false
+      require_api_key: false
+      results: HTML
 
-# Плагины — официальный формат (dict с fully-qualified class names)
+# Плагины — только полезные
 plugins:
 
   searx.plugins.calculator.SXNGPlugin:
@@ -103,6 +190,7 @@ plugins:
   searx.plugins.ahmia_filter.SXNGPlugin:
     active: true
 
+  # Отключаем ненужные
   searx.plugins.oa_doi_rewrite.SXNGPlugin:
     active: false
 
