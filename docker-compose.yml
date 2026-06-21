@@ -34,8 +34,8 @@ services:
     container_name: searxng-mcp
     image: overtlids/mcp-searxng-enhanced:latest
     restart: always
-    # Shell format для гарантии передачи флага --http
-    command: python mcp_server.py --http
+    # Используем entrypoint для переопределения CMD из Dockerfile
+    entrypoint: ["python", "mcp_server.py", "--http"]
     ports:
       - "8000:8000"
     environment:
