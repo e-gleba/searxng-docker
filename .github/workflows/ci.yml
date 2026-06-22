@@ -95,7 +95,7 @@ jobs:
       - name: Prepare environment
         run: |
           cp .env.example .env
-          echo "SEARXNG_SECRET=$(openssl rand -hex 32)" >> .env
+          sed -i "s/^SEARXNG_SECRET=.*/SEARXNG_SECRET=$(openssl rand -hex 32)/" .env
           echo "SEARXNG_IMAGE=searxng-docker:test" >> .env
 
       - name: Start stack
@@ -121,23 +121,23 @@ jobs:
         run: |
           response=$(curl -sf "http://localhost:8080/search?q=test&format=json")
           echo "$response" | python3 -c "
-import sys, json
-data = json.load(sys.stdin)
-results = data.get('results', [])
-print(f'Search returned {len(results)} results')
-if len(results) == 0:
-    print('::warning::No results returned (may be rate-limited)')
-"
+          import sys, json
+          data = json.load(sys.stdin)
+          results = data.get('results', [])
+          print(f'Search returned {len(results)} results')
+          if len(results) == 0:
+              print('::warning::No results returned (may be rate-limited)')
+          "
 
       - name: Test cppreference engine
         run: |
           response=$(curl -sf "http://localhost:8080/search?q=std::vector&engines=cppreference&format=json")
           echo "$response" | python3 -c "
-import sys, json
-data = json.load(sys.stdin)
-results = data.get('results', [])
-print(f'cppreference returned {len(results)} results')
-"
+          import sys, json
+          data = json.load(sys.stdin)
+          results = data.get('results', [])
+          print(f'cppreference returned {len(results)} results')
+          "
 
       - name: Cleanup
         if: always()
