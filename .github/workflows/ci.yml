@@ -21,6 +21,8 @@ jobs:
           dockerfile: Dockerfile
           failure-threshold: warning
       - name: Validate compose
+        env:
+          SEARXNG_SECRET: ci-test-value
         run: docker compose config --quiet
       - name: Lint markdown
         uses: DavidAnson/markdownlint-cli2-action@v23

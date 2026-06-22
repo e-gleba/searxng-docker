@@ -12,7 +12,7 @@
 [![Docker Image](https://img.shields.io/badge/Docker-GHCR-2496ED?logo=docker&logoColor=white)](https://github.com/e-gleba/searxng-docker/pkgs/container/searxng-docker)
 [![Platforms](https://img.shields.io/badge/Platforms-amd64%20%7C%20arm64-333?logo=linux)](#)
 
-[Quick Start](#-quick-start) • [Configuration](#%EF%B8%8F-configuration) • [Production Hardening](#-production-hardening) • [API Reference](endpoints.md) • [Contributing](contributing.md)
+[Quick Start](#-quick-start) • [Configuration](#%EF%B8%8F-configuration) • [Production Hardening](#-production-hardening) • [API Reference](endpoints.md) • [Contributing](.github/contributing.md)
 
 </div>
 
@@ -37,34 +37,14 @@ A minimal, zero-maintenance Docker Compose deployment for [SearXNG](https://gith
 
 ## 🏗️ Architecture
 
-```
-┌─────────────────────────────────────────────────────────────────────┐
-│                         Docker Network                              │
-│                       (searxng-internal)                            │
-│                                                                     │
-│  ┌─────────────────────────────────┐    ┌───────────────────────┐  │
-│  │        SearXNG Core             │    │    Valkey Cache       │  │
-│  │  ┌───────────────────────────┐  │    │  ┌─────────────────┐ │  │
-│  │  │  Granian ASGI Server      │  │◄──►│  │  Redis Protocol │ │  │
-│  │  │  Port: 8080               │  │    │  │  Port: 6379     │ │  │
-│  │  └───────────────────────────┘  │    │  │  (internal)     │ │  │
-│  │  ┌───────────────────────────┐  │    │  └─────────────────┘ │  │
-│  │  │  Search Engines           │  │    │  Memory: 256MB       │  │
-│  │  │  • cppreference (EN/RU)  │  │    │  Policy: allkeys-lru │  │
-│  │  │  • DevDocs               │  │    └───────────────────────┘  │
-│  │  │  • Godot Docs            │  │                               │
-│  │  │  • Google, Yandex...     │  │                               │
-│  │  └───────────────────────────┘  │                               │
-│  └────────────┬────────────────────┘                               │
-│               │ :8080                                               │
-└───────────────┼─────────────────────────────────────────────────────┘
-                │
-                ▼
-┌──────────────────────────────┐
-│  Developer Workstation       │
-│  http://localhost:8080       │
-│  API: /search?q=...&format=json │
-└──────────────────────────────┘
+```mermaid
+flowchart TB
+    subgraph net["searxng-internal network"]
+        SX["SearXNG Core\nGranian ASGI · :8080\ncppreference · DevDocs · Godot"]
+        VK["Valkey Cache\nRedis protocol · :6379\n256MB · allkeys-lru"]
+        SX <-->|redis protocol| VK
+    end
+    SX -->|:8080| DEV["Developer Workstation\nhttp://localhost:8080\n/search?q=...&format=json"]
 ```
 
 ---
@@ -353,9 +333,10 @@ searxng-docker/
 │   ├── workflows/
 │   │   ├── ci.yml              # CI pipeline (lint, test, build)
 │   │   └── release.yml         # Release pipeline (GHCR publish)
+│   ├── contributing.md         # Contribution guidelines
+│   ├── security.md             # Security policy
 │   └── dependabot.yml          # Automated dependency updates
 ├── endpoints.md                # Full API reference
-├── contributing.md             # Contribution guidelines
 ├── security.md                 # Security policy
 └── license.md                  # AGPL-3.0 license
 ```
@@ -364,7 +345,7 @@ searxng-docker/
 
 ## 🤝 Contributing
 
-Contributions are welcome! Please read [contributing.md](contributing.md) for guidelines.
+Contributions are welcome! Please read [contributing guidelines](.github/contributing.md) for details.
 
 **Development workflow:**
 

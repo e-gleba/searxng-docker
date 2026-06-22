@@ -14,7 +14,7 @@
 #   Search API:  http://localhost:${SEARXNG_PORT:-8080}/search?q={query}&format=json
 #   Health:      http://localhost:${SEARXNG_PORT:-8080}/healthz
 #
-# See ENDPOINTS.md for full API reference.
+# See endpoints.md for full API reference.
 # =============================================================================
 
 name: searxng
@@ -70,8 +70,8 @@ services:
       - ./core-config:/etc/searxng:ro
       - core-data:/var/cache/searxng
     environment:
-      SEARXNG_BASE_URL: ${SEARXNG_BASE_URL:-http://localhost:8080/}
-      SEARXNG_SECRET: ${SEARXNG_SECRET:?Set SEARXNG_SECRET in .env — generate with: openssl rand -hex 32}
+      SEARXNG_BASE_URL: "${SEARXNG_BASE_URL:-http://localhost:8080/}"
+      SEARXNG_SECRET: "${SEARXNG_SECRET:?Set SEARXNG_SECRET in .env}"
     depends_on:
       valkey:
         condition: service_healthy
