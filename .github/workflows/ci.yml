@@ -23,7 +23,7 @@ jobs:
       - name: Validate compose
         run: docker compose config --quiet
       - name: Lint markdown
-        uses: DavidAnson/markdownlint-cli2-action@v18
+        uses: DavidAnson/markdownlint-cli2-action@v23
         with:
           globs: '**/*.md'
 
