@@ -5,67 +5,138 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  security-events: write
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+defaults:
+  run:
+    shell: bash
+
 jobs:
   lint:
+    name: Lint and validate
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v7
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Validate Docker Compose configuration
+        env:
+          SEARXNG_SECRET: ci-test-secret-do-not-use-in-production
+        run: docker compose config --quiet
+
       - name: Lint Dockerfile
         uses: hadolint/hadolint-action@v3.3.0
         with:
           dockerfile: Dockerfile
-          failure-threshold: warning
-      - name: Validate compose
-        env:
-          SEARXNG_SECRET: ci-test-value
-        run: docker compose config --quiet
-      - name: Lint markdown
-        uses: DavidAnson/markdownlint-cli2-action@v23
-        with:
-          globs: '**/*.md'
+          config: .hadolint.yaml
 
-  security:
+  docker-build:
+    name: Build Docker image
     runs-on: ubuntu-latest
+    timeout-minutes: 30
+    needs: lint
     steps:
-      - uses: actions/checkout@v7
-      - uses: aquasecurity/trivy-action@v0.36.0
-        with:
-          scan-type: fs
-          severity: CRITICAL,HIGH
-          exit-code: '1'
+      - name: Checkout
+        uses: actions/checkout@v7
 
-  build-test:
-    runs-on: ubuntu-latest
-    needs: [lint, security]
-    steps:
-      - uses: actions/checkout@v7
-      - uses: docker/setup-buildx-action@v4
-      - uses: docker/build-push-action@v7
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Build image
+        uses: docker/build-push-action@v7
         with:
           context: .
           push: false
           load: true
-          tags: searxng-docker:test
+          tags: searxng-docker:ci
           cache-from: type=gha
           cache-to: type=gha,mode=max
-      - name: Prepare environment
+
+  integration:
+    name: Compose integration test
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: docker-build
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Build local image
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          push: false
+          load: true
+          tags: searxng-docker:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Prepare test environment
         run: |
           cp .env.example .env
           sed -i "s/^SEARXNG_SECRET=.*/SEARXNG_SECRET=$(openssl rand -hex 32)/" .env
-          echo "SEARXNG_IMAGE=searxng-docker:test" >> .env
-      - name: Start and health check
+          printf '\nSEARXNG_IMAGE=searxng-docker:ci\n' >> .env
+
+      - name: Start stack
+        run: docker compose up -d --wait --wait-timeout 180
+
+      - name: Verify health endpoint
+        run: curl --fail --silent --show-error http://localhost:8080/healthz
+
+      - name: Verify search endpoint
         run: |
-          docker compose up -d
-          for i in $(seq 1 30); do
-            curl -sf http://localhost:8080/healthz && echo "healthy" && exit 0
-            sleep 5
-          done
-          docker compose logs
-          exit 1
-      - if: always()
-        run: docker compose down -v
+          curl --fail --silent --show-error \
+            --get 'http://localhost:8080/search' \
+            --data-urlencode 'q=std::vector' \
+            --data-urlencode 'format=json' \
+            --output /tmp/search.json
+          test -s /tmp/search.json
+
+      - name: Dump compose logs on failure
+        if: failure()
+        run: docker compose logs --no-color
+
+      - name: Stop stack
+        if: always()
+        run: docker compose down -v --remove-orphans
+
+  security:
+    name: Security scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: lint
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Scan repository filesystem
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          scan-type: fs
+          scan-ref: .
+          severity: CRITICAL,HIGH
+          exit-code: '1'
+          ignore-unfixed: true
+          format: sarif
+          output: trivy-results.sarif
+
+      - name: Upload Trivy SARIF
+        if: always()
+        uses: github/codeql-action/upload-sarif@v4
+        with:
+          sarif_file: trivy-results.sarif
