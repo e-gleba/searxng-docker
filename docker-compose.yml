@@ -72,6 +72,7 @@ services:
     environment:
       SEARXNG_BASE_URL: "${SEARXNG_BASE_URL:-http://localhost:8080/}"
       SEARXNG_SECRET: "${SEARXNG_SECRET:?Set SEARXNG_SECRET in .env}"
+      SEARXNG_REDIS_URL: "redis://valkey:6379/0"
     depends_on:
       valkey:
         condition: service_healthy
