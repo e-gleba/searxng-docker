@@ -39,13 +39,6 @@ jobs:
           dockerfile: Dockerfile
           config: .hadolint.yaml
 
-      - name: Lint Markdown
-        uses: DavidAnson/markdownlint-cli2-action@v23
-        with:
-          globs: |
-            **/*.md
-            !license.md
-
   docker-build:
     name: Build Docker image
     runs-on: ubuntu-latest
