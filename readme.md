@@ -9,8 +9,9 @@ SearXNG is a privacy-respecting metasearch engine. This repository packages a cl
 - Docker Compose v2 stack with SearXNG and Valkey.
 - Fast local setup with `make setup && make up`.
 - Health checks for both services.
-- GitHub Actions CI for compose validation, Docker build, integration test, markdown lint, Hadolint, and Trivy.
+- GitHub Actions CI for Compose validation, Docker build, Compose integration tests, Hadolint, and Trivy.
 - GHCR release workflow with multi-arch `linux/amd64` and `linux/arm64` images.
+- Release images include provenance and SBOM attestations.
 - Developer search profile with shortcuts for cppreference, Stack Overflow, GitHub, DevDocs, Godot docs, Wikipedia, and Russian cppreference.
 
 ## Requirements
@@ -107,10 +108,9 @@ The CI workflow runs on pushes and pull requests to `main`:
 
 1. Validate Docker Compose config.
 2. Lint Dockerfile with Hadolint.
-3. Lint Markdown.
-4. Build Docker image with BuildKit cache.
-5. Run a real Compose integration smoke test.
-6. Scan repository filesystem with Trivy and upload SARIF.
+3. Build Docker image with BuildKit cache.
+4. Run a real Compose integration smoke test.
+5. Scan repository filesystem with Trivy and upload SARIF.
 
 The release workflow runs on `v*` tags and publishes a multi-arch image to GitHub Container Registry with provenance and SBOM enabled.
 
