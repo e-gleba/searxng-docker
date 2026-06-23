@@ -1,31 +1,27 @@
 # =============================================================================
-# SearXNG Configuration — Optimized for C++ Game Development Teams
+# SearXNG Configuration — Developer Search Profile
 # =============================================================================
 # Docs: https://docs.searxng.org/admin/settings/
-#
-# Tuned for cross-platform C++ game development:
-#   - cppreference (EN/RU) engines
-#   - DevDocs multi-language API search
-#   - Godot Engine documentation
-#   - Dark theme, Vim hotkeys, infinite scroll
-#   - Anti-ban suspension tuned for heavy usage
 # =============================================================================
 
 use_default_settings: true
 
 general:
-  instance_name: "SearXNG"
+  instance_name: "SearXNG Dev Search"
   enable_metrics: false
 
 server:
   port: 8080
   bind_address: "0.0.0.0"
-  secret_key: "changeme"
-  base_url: false
+  secret_key: "${SEARXNG_SECRET}"
+  base_url: "${SEARXNG_BASE_URL}"
   image_proxy: true
   limiter: false
   public_instance: false
   method: "POST"
+
+redis:
+  url: "${SEARXNG_REDIS_URL}"
 
 search:
   safe_search: 0
@@ -35,7 +31,6 @@ search:
     - html
     - json
 
-  # Anti-ban: extended suspension after engine errors
   suspended_times:
     SearxEngineAccessDenied: 3600
     SearxEngineCaptcha: 7200
@@ -59,18 +54,7 @@ outgoing:
   pool_maxsize: 20
   enable_http2: true
 
-# =============================================================================
-# Search Engines
-# =============================================================================
 engines:
-
-  # --- Enabled beyond defaults ---
-  - name: yandex
-    disabled: false
-  - name: yandex images
-    disabled: false
-
-  # --- Disabled (slow or unreliable) ---
   - name: bing
     disabled: true
   - name: bing images
@@ -85,20 +69,25 @@ engines:
     disabled: true
   - name: mojeek
     disabled: true
-  - name: hackernews
-    disabled: true
-
-  # --- Disabled (require Tor proxy) ---
   - name: ahmia
     disabled: true
   - name: torch
     disabled: true
 
-  # ===========================================================================
-  # C++ Game Development Engines
-  # ===========================================================================
+  - name: yandex
+    disabled: false
+  - name: yandex images
+    disabled: false
+  - name: stackoverflow
+    disabled: false
+    shortcut: so
+  - name: github
+    disabled: false
+    shortcut: gh
+  - name: wikipedia
+    disabled: false
+    shortcut: wiki
 
-  # C++ Standard Library Reference (English)
   - name: cppreference
     engine: xpath
     shortcut: cpp
@@ -114,7 +103,6 @@ engines:
       require_api_key: false
       results: HTML
 
-  # C++ Standard Library Reference (Russian)
   - name: cppreference ru
     engine: xpath
     shortcut: cppru
@@ -129,29 +117,27 @@ engines:
       require_api_key: false
       results: HTML
 
-  # DevDocs — Multi-language API documentation (C, C++, CMake, etc.)
   - name: devdocs
     engine: xpath
     shortcut: dd
     categories: [it]
     search_url: https://devdocs.io/search?q={query}
-    url_xpath: //a[@class='_item']
-    title_xpath: //a[@class='_item']
-    content_xpath: //a[@class='_item']
+    url_xpath: //a[contains(@class, '_item')]/@href
+    title_xpath: //a[contains(@class, '_item')]
+    content_xpath: //a[contains(@class, '_item')]
     about:
       website: https://devdocs.io/
       use_official_api: false
       require_api_key: false
       results: HTML
 
-  # Godot Engine Documentation
   - name: godot docs
     engine: xpath
     shortcut: godot
     categories: [it]
     search_url: https://docs.godotengine.org/en/stable/search.html?q={query}&check_keywords=yes&area=default
-    url_xpath: //div[contains(@class,'search-result')]//a[@class='headerlink']/@href | //div[contains(@class,'search-result')]/a/@href
-    title_xpath: //div[contains(@class,'search-result')]//a[@class='headerlink'] | //div[contains(@class,'search-result')]/a
+    url_xpath: //div[contains(@class,'search-result')]//a/@href
+    title_xpath: //div[contains(@class,'search-result')]//a
     content_xpath: //div[contains(@class,'search-result')]//p
     about:
       website: https://docs.godotengine.org/
@@ -159,13 +145,8 @@ engines:
       require_api_key: false
       results: HTML
 
-# =============================================================================
-# Plugins
-# =============================================================================
 plugins:
   searx.plugins.calculator.SXNGPlugin:
-    active: true
-  searx.plugins.infinite_scroll.SXNGPlugin:
     active: true
   searx.plugins.hash_plugin.SXNGPlugin:
     active: true

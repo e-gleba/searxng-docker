@@ -1,39 +1,25 @@
 # =============================================================================
 # SearXNG Docker — Production Stack
 # =============================================================================
-# Architecture:  SearXNG (Granian) + Valkey Cache
-# Platforms:     linux/amd64, linux/arm64
-# Standards:     Docker Compose v2, Health Checks, Structured Logging
-#
-# Usage:
-#   cp .env.example .env && $EDITOR .env
-#   docker compose up -d
-#
-# Endpoints:
-#   Web UI:      http://localhost:${SEARXNG_PORT:-8080}/
-#   Search API:  http://localhost:${SEARXNG_PORT:-8080}/search?q={query}&format=json
-#   Health:      http://localhost:${SEARXNG_PORT:-8080}/healthz
-#
-# See endpoints.md for full API reference.
-# =============================================================================
 
 name: searxng
 
 services:
-
-  # ---------------------------------------------------------------------------
-  # Valkey — High-performance Redis-compatible cache
-  # ---------------------------------------------------------------------------
   valkey:
     image: valkey/valkey:${VALKEY_VERSION:-8-alpine}
     container_name: searxng-valkey
     restart: unless-stopped
-    command: >
-      valkey-server
-      --save 60 1
-      --loglevel notice
-      --maxmemory ${VALKEY_MAX_MEMORY:-256mb}
-      --maxmemory-policy allkeys-lru
+    command:
+      - valkey-server
+      - --save
+      - "60"
+      - "1"
+      - --loglevel
+      - notice
+      - --maxmemory
+      - ${VALKEY_MAX_MEMORY:-256mb}
+      - --maxmemory-policy
+      - allkeys-lru
     volumes:
       - valkey-data:/data
     healthcheck:
@@ -47,9 +33,8 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
-        tag: "searxng.valkey"
     networks:
-      - searxng-internal
+      - internal
     deploy:
       resources:
         limits:
@@ -57,9 +42,6 @@ services:
         reservations:
           memory: 128M
 
-  # ---------------------------------------------------------------------------
-  # SearXNG Core — Privacy-respecting metasearch engine
-  # ---------------------------------------------------------------------------
   core:
     image: ${SEARXNG_IMAGE:-searxng/searxng:latest}
     container_name: searxng-core
@@ -72,23 +54,23 @@ services:
     environment:
       SEARXNG_BASE_URL: "${SEARXNG_BASE_URL:-http://localhost:8080/}"
       SEARXNG_SECRET: "${SEARXNG_SECRET:?Set SEARXNG_SECRET in .env}"
+      SEARXNG_REDIS_URL: "redis://valkey:6379/0"
     depends_on:
       valkey:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/healthz"]
+      test: ["CMD-SHELL", "wget --quiet --spider http://localhost:8080/healthz || exit 1"]
       interval: 30s
       timeout: 10s
-      retries: 3
-      start_period: 30s
+      retries: 5
+      start_period: 45s
     logging:
       driver: json-file
       options:
         max-size: "20m"
         max-file: "5"
-        tag: "searxng.core"
     networks:
-      - searxng-internal
+      - internal
     deploy:
       resources:
         limits:
@@ -96,24 +78,12 @@ services:
         reservations:
           memory: 512M
 
-# =============================================================================
-# Networks
-# =============================================================================
 networks:
-  searxng-internal:
+  internal:
     driver: bridge
-    name: searxng-internal
-    ipam:
-      config:
-        - subnet: 172.28.0.0/16
 
-# =============================================================================
-# Volumes
-# =============================================================================
 volumes:
   core-data:
     driver: local
-    name: searxng-core-data
   valkey-data:
     driver: local
-    name: searxng-valkey-data
