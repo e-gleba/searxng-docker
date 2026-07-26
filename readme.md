@@ -1,15 +1,14 @@
 # SearXNG Docker
 
-Production-ready Docker Compose setup for a private, developer-focused SearXNG instance.
+Small, private, single-user SearXNG instance on Docker Compose.
 
-SearXNG is a privacy-respecting metasearch engine. This repository packages a clean local/team deployment with Valkey cache, stable CI, multi-arch image publishing, and search shortcuts tuned for daily engineering work.
-
-Documentation site: <https://e-gleba.github.io/searxng-docker/>
+SearXNG is a privacy-respecting metasearch engine. This repository runs it for one person: bound to loopback, no bot limiter in the way, trimmed memory ceilings, and search shortcuts tuned for daily engineering work.
 
 ## Features
 
 - Docker Compose v2 stack with SearXNG and Valkey.
 - Fast local setup with `make setup && make up`.
+- Published on `127.0.0.1` only; nothing on the LAN can reach it.
 - Health checks for both services.
 - GitHub Actions CI for Compose validation, Docker build, Compose integration tests, Hadolint, and Trivy.
 - GHCR release workflow with multi-arch `linux/amd64` and `linux/arm64` images.
@@ -22,6 +21,7 @@ Documentation site: <https://e-gleba.github.io/searxng-docker/>
 - `make`.
 - `python3` for portable local secret generation in `make setup`.
 - `curl` for smoke tests.
+- Roughly 1 GB of free RAM and 1 GB of disk.
 
 ## Quick start
 
@@ -57,13 +57,23 @@ Runtime values live in `.env`:
 | Variable | Default | Description |
 | --- | --- | --- |
 | `SEARXNG_PORT` | `8080` | Host port for SearXNG. |
+| `SEARXNG_BIND_HOST` | `127.0.0.1` | Host interface the port is published on. Use `0.0.0.0` only for deliberate LAN exposure. |
 | `SEARXNG_BASE_URL` | `http://localhost:8080/` | Public URL, especially behind reverse proxy. |
 | `SEARXNG_SECRET` | Required | Secret key for sessions. Generate a unique value. |
 | `SEARXNG_IMAGE` | `searxng/searxng:latest` | SearXNG image to run. |
 | `VALKEY_VERSION` | `8-alpine` | Valkey image tag. |
-| `VALKEY_MAX_MEMORY` | `256mb` | Cache memory limit. |
+| `VALKEY_MAX_MEMORY` | `128mb` | Cache memory limit. |
 
-Main SearXNG settings live in `core-config/settings.yml`.
+Main SearXNG settings live in `core-config/settings.yml`. It is already tuned for a private instance: `limiter: false`, `public_instance: false`, metrics off, dark simple theme, vim hotkeys.
+
+## Resource footprint
+
+| Service | Memory reservation | Memory limit |
+| --- | --- | --- |
+| `core` | 256M | 1G |
+| `valkey` | 64M | 192M |
+
+Upstream guidance is 256M minimum and 512M recommended for SearXNG plus 50-100M for the cache, so these ceilings keep headroom without reserving a whole gigabyte up front.
 
 ## Search shortcuts
 
@@ -116,24 +126,21 @@ The CI workflow runs on pushes and pull requests to `main`:
 
 The release workflow runs on `v*` tags and publishes a multi-arch image to GitHub Container Registry with provenance and SBOM enabled.
 
-The Pages workflow publishes `docs/` to <https://e-gleba.github.io/searxng-docker/> on pushes to `main` that touch `docs/`. It is a static documentation site only; the search instance itself stays self-hosted.
+## If you ever expose it
 
-## Production notes
+The defaults assume a private instance. Before putting it on a network:
 
-- Put the service behind a TLS reverse proxy for public/team use.
-- Set `SEARXNG_BASE_URL` to the external URL.
-- Keep `SEARXNG_SECRET` unique and private.
-- Consider enabling SearXNG limiter when exposing the instance publicly.
-- Keep `.env` out of Git; it is ignored by default.
-- Never publish instance hostnames or secrets in `docs/`; that directory is public.
+- Put the service behind a TLS reverse proxy and set `SEARXNG_BASE_URL` to the external URL.
+- Enable the SearXNG limiter in `core-config/settings.yml`; there is no authentication by design.
+- Consider dropping `json` from `search.formats` so the API is not open.
+- Keep `SEARXNG_SECRET` unique and private. `.env` is ignored by Git.
 
 ## Project structure
 
 ```text
 .
-├── .github/workflows/      # CI, release, and Pages automation
+├── .github/workflows/      # CI and release automation
 ├── core-config/            # SearXNG configuration
-├── docs/                   # Static documentation site published to GitHub Pages
 ├── docker-compose.yml      # Runtime stack
 ├── Dockerfile              # Optional custom image
 ├── Makefile                # Local commands
