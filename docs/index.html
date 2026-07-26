@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SearXNG Docker — private metasearch for developers</title>
+<meta name="description" content="Production-ready Docker Compose stack for a private, developer-focused SearXNG instance with Valkey cache, health checks and CI.">
+<link rel="canonical" href="https://e-gleba.github.io/searxng-docker/">
+
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src 'self' data:; style-src 'self'; base-uri 'none'; form-action 'none'">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<meta name="color-scheme" content="dark light">
+
+<meta property="og:type" content="website">
+<meta property="og:title" content="SearXNG Docker">
+<meta property="og:description" content="Private, developer-focused SearXNG instance. Docker Compose, Valkey cache, multi-arch GHCR images.">
+<meta property="og:url" content="https://e-gleba.github.io/searxng-docker/">
+<meta name="twitter:card" content="summary">
+
+<link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="wrap">
+  <p class="eyebrow">e-gleba / searxng-docker</p>
+  <h1>SearXNG Docker</h1>
+  <p class="tagline">Production-ready Docker Compose setup for a private, developer-focused SearXNG instance.</p>
+  <p class="note">This is documentation only. The search instance is self-hosted and private &mdash; it does not run on this page.</p>
+  <nav class="actions" aria-label="Primary">
+    <a class="btn primary" href="https://github.com/e-gleba/searxng-docker">Source on GitHub</a>
+    <a class="btn" href="https://github.com/e-gleba/searxng-docker/blob/main/endpoints.md">API reference</a>
+    <a class="btn" href="https://github.com/searxng/searxng">Upstream SearXNG</a>
+  </nav>
+</header>
+
+<main id="main" class="wrap">
+
+<section aria-labelledby="what">
+  <h2 id="what">What it is</h2>
+  <p>SearXNG is a privacy-respecting metasearch engine. This repository packages a clean local or team deployment: SearXNG plus a Valkey cache, health checks on both services, multi-arch image publishing, and search shortcuts tuned for daily engineering work.</p>
+  <ul class="features">
+    <li>Docker Compose v2 stack: SearXNG + Valkey, both health-checked.</li>
+    <li>Two-command bring-up via <code>make setup &amp;&amp; make up</code>.</li>
+    <li>CI: Compose validation, Hadolint, image build, real integration smoke test, Trivy SARIF.</li>
+    <li>Release workflow publishes multi-arch <code>linux/amd64</code> and <code>linux/arm64</code> images to GHCR with provenance and SBOM attestations.</li>
+    <li>Valkey is never exposed to the host; config is mounted read-only.</li>
+  </ul>
+</section>
+
+<section aria-labelledby="start">
+  <h2 id="start">Quick start</h2>
+  <pre><code>git clone https://github.com/e-gleba/searxng-docker.git
+cd searxng-docker
+make setup
+make up
+make test</code></pre>
+  <p>Then open <code>http://localhost:8080</code>.</p>
+</section>
+
+<section aria-labelledby="shortcuts">
+  <h2 id="shortcuts">Search shortcuts</h2>
+  <div class="scroll">
+  <table>
+    <thead><tr><th>Shortcut</th><th>Engine</th><th>Example</th></tr></thead>
+    <tbody>
+      <tr><td><code>!cpp</code></td><td>cppreference EN</td><td><code>!cpp std::vector push_back</code></td></tr>
+      <tr><td><code>!cppru</code></td><td>cppreference RU</td><td><code>!cppru std::unique_ptr</code></td></tr>
+      <tr><td><code>!so</code></td><td>Stack Overflow</td><td><code>!so docker compose healthcheck</code></td></tr>
+      <tr><td><code>!gh</code></td><td>GitHub</td><td><code>!gh searxng settings.yml redis</code></td></tr>
+      <tr><td><code>!dd</code></td><td>DevDocs</td><td><code>!dd cmake target_link_libraries</code></td></tr>
+      <tr><td><code>!godot</code></td><td>Godot docs</td><td><code>!godot signal connect</code></td></tr>
+      <tr><td><code>!wiki</code></td><td>Wikipedia</td><td><code>!wiki valkey</code></td></tr>
+    </tbody>
+  </table>
+  </div>
+</section>
+
+<section aria-labelledby="api">
+  <h2 id="api">JSON API</h2>
+  <pre><code>curl --get 'http://localhost:8080/search' \
+  --data-urlencode 'q=!cpp std::vector reserve' \
+  --data-urlencode 'format=json'</code></pre>
+  <p>Full parameter list, response shape, health and troubleshooting commands live in <a href="https://github.com/e-gleba/searxng-docker/blob/main/endpoints.md">endpoints.md</a>.</p>
+</section>
+
+<section aria-labelledby="config">
+  <h2 id="config">Configuration</h2>
+  <div class="scroll">
+  <table>
+    <thead><tr><th>Variable</th><th>Default</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td><code>SEARXNG_PORT</code></td><td><code>8080</code></td><td>Host port for SearXNG.</td></tr>
+      <tr><td><code>SEARXNG_BASE_URL</code></td><td><code>http://localhost:8080/</code></td><td>Public URL, especially behind a reverse proxy.</td></tr>
+      <tr><td><code>SEARXNG_SECRET</code></td><td>required</td><td>Session secret. Generate a unique value; never commit it.</td></tr>
+      <tr><td><code>SEARXNG_IMAGE</code></td><td><code>searxng/searxng:latest</code></td><td>SearXNG image to run.</td></tr>
+      <tr><td><code>VALKEY_VERSION</code></td><td><code>8-alpine</code></td><td>Valkey image tag.</td></tr>
+      <tr><td><code>VALKEY_MAX_MEMORY</code></td><td><code>256mb</code></td><td>Cache memory limit.</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p>Main SearXNG settings live in <code>core-config/settings.yml</code>.</p>
+</section>
+
+<section aria-labelledby="prod">
+  <h2 id="prod">If you expose it</h2>
+  <ul class="features">
+    <li>Put the service behind a TLS reverse proxy.</li>
+    <li>Set <code>SEARXNG_BASE_URL</code> to the external URL.</li>
+    <li>Keep <code>SEARXNG_SECRET</code> unique and private; <code>.env</code> stays out of Git.</li>
+    <li>Enable the SearXNG limiter &mdash; there is no authentication by design.</li>
+  </ul>
+</section>
+
+</main>
+
+<footer class="wrap">
+  <p>AGPL-3.0. SearXNG is AGPL-3.0 as well &mdash; see <a href="https://github.com/searxng/searxng">the upstream project</a>.</p>
+  <p><a href="https://e-gleba.github.io/">e-gleba.github.io</a> &middot; <a href="https://github.com/e-gleba/searxng-docker">repository</a></p>
+</footer>
+</body>
+</html>

@@ -4,6 +4,8 @@ Production-ready Docker Compose setup for a private, developer-focused SearXNG i
 
 SearXNG is a privacy-respecting metasearch engine. This repository packages a clean local/team deployment with Valkey cache, stable CI, multi-arch image publishing, and search shortcuts tuned for daily engineering work.
 
+Documentation site: <https://e-gleba.github.io/searxng-docker/>
+
 ## Features
 
 - Docker Compose v2 stack with SearXNG and Valkey.
@@ -114,6 +116,8 @@ The CI workflow runs on pushes and pull requests to `main`:
 
 The release workflow runs on `v*` tags and publishes a multi-arch image to GitHub Container Registry with provenance and SBOM enabled.
 
+The Pages workflow publishes `docs/` to <https://e-gleba.github.io/searxng-docker/> on pushes to `main` that touch `docs/`. It is a static documentation site only; the search instance itself stays self-hosted.
+
 ## Production notes
 
 - Put the service behind a TLS reverse proxy for public/team use.
@@ -121,13 +125,15 @@ The release workflow runs on `v*` tags and publishes a multi-arch image to GitHu
 - Keep `SEARXNG_SECRET` unique and private.
 - Consider enabling SearXNG limiter when exposing the instance publicly.
 - Keep `.env` out of Git; it is ignored by default.
+- Never publish instance hostnames or secrets in `docs/`; that directory is public.
 
 ## Project structure
 
 ```text
 .
-├── .github/workflows/      # CI and release automation
+├── .github/workflows/      # CI, release, and Pages automation
 ├── core-config/            # SearXNG configuration
+├── docs/                   # Static documentation site published to GitHub Pages
 ├── docker-compose.yml      # Runtime stack
 ├── Dockerfile              # Optional custom image
 ├── Makefile                # Local commands
