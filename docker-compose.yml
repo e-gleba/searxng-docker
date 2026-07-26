@@ -1,5 +1,5 @@
 # =============================================================================
-# SearXNG Docker — Production Stack
+# SearXNG Docker — Private Single-User Stack
 # =============================================================================
 
 name: searxng
@@ -17,7 +17,7 @@ services:
       - --loglevel
       - notice
       - --maxmemory
-      - ${VALKEY_MAX_MEMORY:-256mb}
+      - ${VALKEY_MAX_MEMORY:-128mb}
       - --maxmemory-policy
       - allkeys-lru
     volumes:
@@ -38,16 +38,18 @@ services:
     deploy:
       resources:
         limits:
-          memory: 512M
+          memory: 192M
         reservations:
-          memory: 128M
+          memory: 64M
 
   core:
     image: ${SEARXNG_IMAGE:-searxng/searxng:latest}
     container_name: searxng-core
     restart: unless-stopped
     ports:
-      - "${SEARXNG_PORT:-8080}:8080"
+      # Loopback only. This is a private instance; nothing on the LAN or the
+      # internet can reach it. Set SEARXNG_BIND_HOST=0.0.0.0 to widen it.
+      - "${SEARXNG_BIND_HOST:-127.0.0.1}:${SEARXNG_PORT:-8080}:8080"
     volumes:
       - ./core-config:/etc/searxng:ro
       - core-data:/var/cache/searxng
@@ -74,9 +76,9 @@ services:
     deploy:
       resources:
         limits:
-          memory: 2G
+          memory: 1G
         reservations:
-          memory: 512M
+          memory: 256M
 
 networks:
   internal:
